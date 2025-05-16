@@ -60,6 +60,17 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     /// Creates an Option with no value.
     /// </summary>
     public static Option<T> None() => _none;
+
+    
+    public static Option<T> FromNullable(T? value)
+    {
+        return value is null ? None() : Some(value);
+    }
+    
+    public T? ToNullable()
+    {
+        return IsSome ? _value : default;
+    }
     
     public bool TryUnwrap(out T value)
     {
