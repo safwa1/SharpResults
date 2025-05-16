@@ -1,6 +1,7 @@
 # SharpResults
 
 A lightweight, zero-dependency C# library that implements the Result and Option types for more explicit and type-safe error handling. SharpResults helps you avoid exceptions for control flow and makes success/failure and presence/absence states explicit in your code.
+
 <div align="center">
 
 ![SharpResults Logo](https://img.shields.io/badge/SharpResults-Type--Safe%20Error%20Handling-blue)
