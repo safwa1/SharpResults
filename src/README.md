@@ -505,17 +505,6 @@ SharpResults is designed to be lightweight and efficient. Here are some performa
 - **Minimal allocations**: The library minimizes heap allocations where possible.
 - **Struct-based implementation**: For performance-critical code, consider using the struct-based variants of Result types.
 
-### Benchmarks
-
-Comparison between traditional exception handling and SharpResults for a typical validation scenario:
-
-| Method | Mean | Error | Allocations |
-|--------|------|-------|-------------|
-| Traditional Exception Handling | 1250.3 ns | 24.52 ns | 5 allocations |
-| SharpResults | 42.7 ns | 0.85 ns | 2 allocations |
-
-*Note: These are illustrative benchmarks. Actual performance may vary depending on your specific use case.*
-
 ## Comparison with Other Libraries
 
 ### ⚖️ TL;DR — Summary
