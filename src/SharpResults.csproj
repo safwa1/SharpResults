@@ -8,7 +8,7 @@
         <NoWarn>1591</NoWarn>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageId>SharpResults</PackageId>
-        <Version>0.3.0</Version>
+        <Version>0.3.1</Version>
         <Authors>Safwan Abdulghani</Authors>
         <Company>YourCompany</Company>
         <Description>
