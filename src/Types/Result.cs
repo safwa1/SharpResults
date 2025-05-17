@@ -75,8 +75,8 @@ public readonly struct Result<T>
     /// </summary>
     /// <returns>A string indicating success or failure.</returns>
     public override string ToString() => IsOk 
-        ? $"Success({_value})" 
-        : $"Failure({_exception?.Message})";
+        ? $"Ok({_value})" 
+        : $"Err({_exception?.Message})";
 
     /// <summary>
     /// Deconstructs the result into its components.

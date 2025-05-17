@@ -22,8 +22,9 @@ public static class OptionExtensions
     }
     
     public static Option<T> ToSome<T>(this T value) => Some(value);
+    public static Option<T> ToNone<T>(this T? _) => None<T>();
     
-    public static Option<T> ToOption<T>(this T? value) where T : class => value != null ? Some(value) : Defaults.None;
+    public static Option<T> ToOption<T>(this T? value) => value != null ? Some(value) : Defaults.None;
 }
 
 public static class OptionLinqExtensions

@@ -54,6 +54,23 @@ public static class Result
             return Err<T>(ex);
         }
     }
+    
+    /// <summary>
+    /// Converts an <see cref="Option{T}"/> to a <see cref="Result{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the value contained in the option.</typeparam>
+    /// <param name="option">The option to convert.</param>
+    /// <returns>
+    /// A successful <see cref="Result{T}"/> if the option is <c>Some</c>;
+    /// otherwise, an error <see cref="Result{T}"/> with a default error message.
+    /// </returns>
+    [DebuggerStepThrough]
+    public static Result<T> From<T>(Option<T> option)
+    {
+        return option.IsSome
+            ? Ok(option.Value)
+            : Err<T>("None");
+    }
 
     /// <summary>
     /// Executes the specified action and returns a <see cref="Result{Unit}"/>. 

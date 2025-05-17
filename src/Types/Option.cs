@@ -13,7 +13,7 @@ namespace SharpResults.Types;
 [DebuggerDisplay("{ToString()}")]
 public readonly struct Option<T> : IEquatable<Option<T>>
 {
-    private static readonly Option<T> _none = new(new None());
+    private static readonly Option<T> EmptyOption = new(new None());
     
     private readonly T _value;
 
@@ -59,7 +59,7 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     /// <summary>
     /// Creates an Option with no value.
     /// </summary>
-    public static Option<T> None() => _none;
+    public static Option<T> None() => EmptyOption;
 
     
     public static Option<T> FromNullable(T? value)
@@ -76,6 +76,11 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     {
         value = _value;
         return IsSome;
+    }
+    
+    public Result<T> Unwrap()
+    {
+        return Result.From(this);
     }
 
     /// <summary>
@@ -131,14 +136,15 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     public static bool operator !=(Option<T> left, Option<T> right) => !(left == right);
 
     /// <summary>
-    /// Explicit conversion from T to Option&lt;T&gt;.
+    /// Implicit conversion from T to Option&lt;T&gt;.
     /// </summary>
-    public static explicit operator Option<T>(T? value) => value is null ? None() : Some(value);
+    public static implicit operator Option<T>(T value) => value is null ? None() : Some(value);
+    
 
     /// <summary>
-    /// Explicit conversion from Option&lt;T&gt; to T.
+    /// Implicit conversion from Option&lt;T&gt; to T.
     /// </summary>
-    public static explicit operator T(Option<T> option) => option.Value;
+    public static implicit operator T(Option<T> option) => option.Value;
 
     /// <summary>
     /// Implicit conversion from T to Option&lt;T&gt; (wraps non-null values).
@@ -149,12 +155,12 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     /// <summary>
     /// Implicit conversion from None to Option&lt;T&gt;.
     /// </summary>
-    public static implicit operator Option<T>(None _) => _none;
+    public static implicit operator Option<T>(None _) => EmptyOption;
 
     /// <summary>
-    /// Implicit conversion from Option&lt;T&gt; to bool indicating presence.
+    /// Explicit conversion from Option&lt;T&gt; to bool indicating presence.
     /// </summary>
-    public static implicit operator bool(Option<T> option) => option.IsSome;
+    public static explicit operator bool(Option<T> option) => option.IsSome;
     
 
     /// <summary>
@@ -242,11 +248,43 @@ public readonly struct Option<T> : IEquatable<Option<T>>
         return IsSome ? some(_value) : none;
     }
     
+    /// <summary>
+    /// Combines this <see cref="Option{T}"/> with another <see cref="Option{U}"/> into a single <see cref="Option{ValueTuple{T, U}}"/>.
+    /// </summary>
+    /// <typeparam name="U">The type of the value in the other option.</typeparam>
+    /// <param name="other">The other option to combine with.</param>
+    /// <returns>
+    /// <see cref="Option.Some{T}(T)"/> containing a tuple of both values if both options are <c>Some</c>;
+    /// otherwise, <see cref="Option.None{T}"/>.
+    /// </returns>
+    /// <example>
+    /// <code>
+    /// var a = Option.Some(1);
+    /// var b = Option.Some("hello");
+    /// var zipped = a.Zip(b); // Some((1, "hello"))
+    /// </code>
+    /// </example>
     public Option<(T, U)> Zip<U>(Option<U> other) =>
         IsSome && other.IsSome ? Option<(T, U)>.Some((Value, other.Value)) : Option<(T, U)>.None();
 
+    /// <summary>
+    /// Returns this option if the contained value satisfies the given predicate; otherwise, returns <see cref="Option.None{T}"/>.
+    /// </summary>
+    /// <param name="predicate">The predicate to test the value against.</param>
+    /// <returns>
+    /// <see cref="Option.Some{T}(T)"/> if the option is <c>Some</c> and the predicate returns <c>true</c>;
+    /// otherwise, <see cref="Option.None{T}"/>.
+    /// </returns>
+    /// <example>
+    /// <code>
+    /// var age = Option.Some(25);
+    /// var adult = age.Filter(a => a >= 18); // Some(25)
+    /// var child = age.Filter(a => a &lt; 18);  // None
+    /// </code>
+    /// </example>
     public Option<T> Filter(Func<T, bool> predicate) =>
         IsSome && predicate(_value) ? this : None();
+    
     
     /// <summary>
     /// Deconstructs the option into a flag and value.
@@ -261,5 +299,6 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     /// Returns a string that represents the current option.
     /// </summary>
     public override string ToString() => IsSome ? $"Some({_value})" : "None";
+    
 }
 

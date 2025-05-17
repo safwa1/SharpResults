@@ -265,4 +265,39 @@ public static class ResultExtensions
         );
         
     }
+
+    /// <summary>
+    /// Converts a <see cref="Result{T}"/> into an <see cref="Option{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the value contained in the result.</typeparam>
+    /// <param name="result">The result to convert.</param>
+    /// <returns>
+    /// <see cref="Option.Some{T}(T)"/> if the result is <c>Ok</c>;
+    /// otherwise, <see cref="Option.None{T}"/>.
+    /// </returns>
+    public static Option<T> ToOption<T>(this Result<T> result)
+    {
+        return Option.From(result);
+    }
+    
+    /// <summary>
+    /// Retrieves the error message from a failed <see cref="Result{T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the value contained in the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <returns>
+    /// The error message if the result is <c>Err</c>; otherwise, an empty string.
+    /// </returns>
+    public static string GetError<T>(this Result<T> result) => result.IsErr ? result.Exception.Message : string.Empty;
+    
+    /// <summary>
+    /// Converts the error message of a failed <see cref="Result{T}"/> into an <see cref="Option{String}"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the value contained in the result.</typeparam>
+    /// <param name="result">The result to inspect.</param>
+    /// <returns>
+    /// <see cref="Option.Some{T}(T)"/> containing the error message if the result is <c>Err</c>;
+    /// otherwise, <see cref="Option.None{T}"/>.
+    /// </returns>
+    public static Option<string> GetErrorOption<T>(this Result<T> result) => result.IsErr ? result.Exception.Message.ToOption() : Option<string>.None();
 }
