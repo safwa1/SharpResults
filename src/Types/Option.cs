@@ -249,7 +249,7 @@ public readonly struct Option<T> : IEquatable<Option<T>>
     }
     
     /// <summary>
-    /// Combines this <see cref="Option{T}"/> with another <see cref="Option{U}"/> into a single <see cref="Option{ValueTuple{T, U}}"/>.
+    /// Combines this <see cref="Option{T}"/> with another <see cref="Option{U}"/> into a single Option&lt;ValueTuple&lt;T, U&gt;&gt;.
     /// </summary>
     /// <typeparam name="U">The type of the value in the other option.</typeparam>
     /// <param name="other">The other option to combine with.</param>

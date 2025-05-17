@@ -62,7 +62,7 @@ public static class Option
     /// </returns>
     /// <remarks>
     /// This method is useful for wrapping exception-prone logic in a safe optional context.
-    /// Internally, it uses <see cref="Result.From(Func{T})"/> to handle exceptions.
+    /// Internally, it uses Result.From(Func&lt;T&gt;) to handle exceptions.
     /// </remarks>
     [DebuggerStepThrough]
     public static Option<T> From<T>(Func<T> func)
