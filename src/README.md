@@ -4,9 +4,12 @@ A lightweight, zero-dependency C# library that implements the Result and Option 
 
 <div align="center">
 
+
 ![SharpResults Logo](https://img.shields.io/badge/SharpResults-Type--Safe%20Error%20Handling-blue)
 [![NuGet](https://img.shields.io/nuget/v/SharpResults.svg)](https://www.nuget.org/packages/SharpResults/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://img.shields.io/nuget/dt/SharpResults.svg)](https://www.nuget.org/packages/SharpResults/)
+
 
 </div>
 
