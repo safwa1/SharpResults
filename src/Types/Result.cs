@@ -99,6 +99,7 @@ public readonly struct Result<T>
     public static implicit operator Result<T>(T value) => Ok(value);
     
     public static implicit operator Result<T>(Error error) => Err(error.Value ?? string.Empty);
+    
     public static implicit operator Result<T>(string error) => Err(error ?? string.Empty);
     
     public static implicit operator Result<T>(Exception exception) => Err(exception);
