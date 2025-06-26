@@ -34,6 +34,7 @@ public static class Result
     /// <returns>A failed result containing the message as an exception.</returns>
     [DebuggerStepThrough]
     public static Result<T> Err<T>(string error) => Result<T>.Err(error);
+    
 
     /// <summary>
     /// Executes the specified function and returns a <see cref="Result{T}"/>. 

@@ -69,6 +69,7 @@ public readonly struct Result<T>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="error"/> is null.</exception>
     [DebuggerStepThrough]
     public static Result<T> Err(string error) => new(default, new Exception(error ?? throw new ArgumentNullException(nameof(error))), false);
+    
 
     /// <summary>
     /// Returns a string representation of the result.
@@ -96,6 +97,11 @@ public readonly struct Result<T>
     /// </summary>
     /// <param name="value">The value to convert.</param>
     public static implicit operator Result<T>(T value) => Ok(value);
+    
+    public static implicit operator Result<T>(Error error) => Err(error.Value ?? string.Empty);
+    public static implicit operator Result<T>(string error) => Err(error ?? string.Empty);
+    
+    public static implicit operator Result<T>(Exception exception) => Err(exception);
 }
 
 
