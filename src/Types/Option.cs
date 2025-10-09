@@ -1,304 +1,419 @@
-using System.Diagnostics;
+﻿#if NET8_0_OR_GREATER
+#endif
+
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
+using System.Text.Unicode;
+using SharpResults.Converters;
+using static System.ArgumentNullException;
 
 namespace SharpResults.Types;
 
-
 /// <summary>
-/// Represents an optional value: every Option is either Some and contains a value, or None.
+/// <see cref="Option{T}"/> represents an optional value: every <see cref="Option{T}"/> is either <c>Some</c> and contains a value, or <c>None</c>, and does not. 
 /// </summary>
-/// <typeparam name="T">The type of the value.</typeparam>
+/// <typeparam name="T">The type the option might contain.</typeparam>
+[SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Not concerned with Visual Basic or F#.")]
+[Serializable]
 [JsonConverter(typeof(OptionJsonConverter))]
-[DebuggerDisplay("{ToString()}")]
-public readonly struct Option<T> : IEquatable<Option<T>>
+public readonly struct Option<T> : IEquatable<Option<T>>, IComparable<Option<T>>, IFormattable, ISpanFormattable
+#if NET8_0_OR_GREATER
+, IUtf8SpanFormattable
+#endif
+    where T : notnull
 {
-    private static readonly Option<T> EmptyOption = new(new None());
-    
+    /// <summary>
+    /// Returns the <c>None</c> option for the specified <typeparamref name="T"/>.
+    /// </summary>
+    [SuppressMessage("Design", "CA1000:Do not declare static members on generic types", Justification = "The syntax `Option<T>.None` is too nice to give up.")]
+    public static Option<T> None
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => default;
+    }
+
+    private readonly bool _isSome;
     private readonly T _value;
 
     /// <summary>
-    /// Indicates whether the option contains a value.
+    /// Creates an <see cref="Option{T}"/> containing the given value.
+    /// <para>NOTE: Nulls are not allowed; a null value will result in a <c>None</c> option.</para>
     /// </summary>
-    public bool IsSome { get; }
-
-    /// <summary>
-    /// Indicates whether the option does not contain a value.
-    /// </summary>
-    public bool IsNone => !IsSome;
-
-    /// <summary>
-    /// Gets the contained value or throws if None.
-    /// </summary>
-    public T Value => IsSome
-        ? _value
-        : throw new InvalidOperationException("Cannot access the value of a None Option.");
-
-    private Option(T value)
+    /// <param name="value">The value to wrap in an <see cref="Option{T}"/>.</param>
+    public Option(T value)
     {
-        _value = value!;
-        IsSome = true;
-    }
-
-    private Option(None _)
-    {
-        _value = default!;
-        IsSome = false;
+        _value = value;
+        _isSome = value is not null;
     }
 
     /// <summary>
-    /// Creates an Option with a value.
+    /// Returns <c>true</c> if the option is <c>None</c>.
     /// </summary>
-    public static Option<T> Some(T value)
-    {
-        if (value == null)
-            throw new ArgumentNullException(nameof(value), "Cannot assign null to Some.");
-        return new Option<T>(value);
-    }
-
-    /// <summary>
-    /// Creates an Option with no value.
-    /// </summary>
-    public static Option<T> None() => EmptyOption;
-
+    public bool IsNone => !_isSome;
     
-    public static Option<T> FromNullable(T? value)
-    {
-        return value is null ? None() : Some(value);
-    }
-    
-    public T? ToNullable()
-    {
-        return IsSome ? _value : default;
-    }
-    
-    public bool TryUnwrap(out T value)
+        
+    /// <summary>
+    /// Returns <c>true</c> if the option is <c>Some</c>.
+    /// </summary>
+    public bool IsSome => _isSome;
+
+    /// <summary>
+    /// Returns <c>true</c> if the option is <c>Some</c>, and returns the contained
+    /// value through <paramref name="value"/>.
+    /// </summary>
+    /// <param name="value">The value contained in the option.</param>
+    /// <returns><c>true</c> if the option is <c>Some</c>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool WhenSome([MaybeNullWhen(false)] out T value)
     {
         value = _value;
-        return IsSome;
-    }
-    
-    public Result<T> Unwrap()
-    {
-        return Result.From(this);
+        return _isSome;
     }
 
     /// <summary>
-    /// Returns the value or a fallback.
+    /// Returns the result of executing the <paramref name="some"/>
+    /// or <paramref name="none"/> functions, depending on the state 
+    /// of the <see cref="Option{T}"/>.
     /// </summary>
-    [DebuggerStepThrough]
-    public T UnwrapOr(T defaultValue) => IsSome ? _value : defaultValue;
-    
-    public T UnwrapOrElse(Func<T> factory)
+    /// <typeparam name="T2">The return type of the given functions.</typeparam>
+    /// <param name="some">The function to pass the value to, if the option is <c>Some</c>.</param>
+    /// <param name="none">The function to call if the option is <c>None</c>.</param>
+    /// <returns>The value returned by the called function.</returns>
+    /// <exception cref="System.ArgumentNullException">Thrown if either <paramref name="some"/> or <paramref name="none"/> is null.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T2 Match<T2>(Func<T, T2> some, Func<T2> none)
     {
-        return IsSome ? _value : factory();
-    }
-    
-    public Result<T, E> OkOr<E>(E error)
-    {
-        return IsSome ? Result<T, E>.Ok(_value) : Result<T, E>.Err(error);
-    }
-
-    public Result<T, E> OkOrElse<E>(Func<E> errorFactory)
-    {
-        return IsSome ? Result<T, E>.Ok(_value) : Result<T, E>.Err(errorFactory());
+        ThrowIfNull(some);
+        ThrowIfNull(none);
+        return _isSome ? some(_value) : none();
     }
 
     /// <summary>
-    /// Maps the value if present.
+    /// If the option is <c>Some</c>, passes the contained value to the <paramref name="onSome"/> function.
+    /// Otherwise calls the <paramref name="onNone"/> function.
     /// </summary>
-    [DebuggerStepThrough]
-    public Option<U> Map<U>(Func<T, U> mapper)
+    /// <param name="onSome">The function to call with the contained <c>Some</c> value, if any.</param>
+    /// <param name="onNone">The function to call if the option is <c>None</c>.</param>
+    /// <exception cref="System.ArgumentNullException">Thrown if either <paramref name="onSome"/> or <paramref name="onNone"/> is null.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Match(Action<T> onSome, Action onNone)
     {
-        return IsSome ? Option<U>.Some(mapper(_value)) : Option<U>.None();
+        ThrowIfNull(onSome);
+        ThrowIfNull(onNone);
+        if (_isSome)
+            onSome(_value);
+        else
+            onNone();
     }
 
     /// <summary>
-    /// Applies a function returning another Option if present.
+    /// Returns the contained <c>Some</c> value, or throws an <see cref="InvalidOperationException"/>
+    /// if the value is <c>None</c>.
     /// </summary>
-    public Option<U> AndThen<U>(Func<T, Option<U>> binder)
+    /// <returns>The value contained in the option.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the option does not contain a value.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T Unwrap()
     {
-        return IsSome ? binder(_value) : Option<U>.None();
+        return _isSome ? _value
+            : throw new InvalidOperationException("The option was expected to contain a value, but did not.");
     }
 
+    /// <summary>
+    /// Converts the option into a <see cref="ReadOnlySpan{T}"/> that contains either zero or one
+    /// items depending on whether the option is <c>None</c> or <c>Some</c>.
+    /// </summary>
+    /// <returns>A span containing the option's value, or an empty span.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<T> AsSpan()
+    {
+        return _isSome
+            ? MemoryMarshal.CreateReadOnlySpan(ref Unsafe.AsRef(in _value), 1)
+            : [];
+    }
+
+    /// <summary>
+    /// Returns an <see cref="IEnumerable{T}"/> containing either zero or one value,
+    /// depending on whether the option is <c>None</c> or <c>Some</c>.
+    /// </summary>
+    /// <returns>An enumerable containing the option's value, or an empty enumerable.</returns>
+    public IEnumerable<T> AsEnumerable()
+    {
+        if (_isSome)
+        {
+            yield return _value;
+        }
+    }
+
+    /// <summary>
+    /// Returns an enumerator for the option.
+    /// </summary>
+    /// <returns>The enumerator.</returns>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public IEnumerator<T> GetEnumerator()
+    {
+        if (_isSome)
+        {
+            yield return _value;
+        }
+    }
+
+    /// <summary>
+    /// Indicates whether the current object is equal to another object of the same type.
+    /// </summary>
+    /// <param name="other">An object to compare with this object.</param>
+    /// <returns>
+    /// <c>true</c> if the current object is equal to the <paramref name="other"/> parameter;
+    /// otherwise, <c>false</c>.
+    /// </returns>
     public bool Equals(Option<T> other)
     {
-        if (IsNone && other.IsNone) return true;
-        if (IsSome && other.IsSome) return EqualityComparer<T>.Default.Equals(_value, other._value);
+        if (_isSome != other._isSome)
+            return false;
+
+        if (!_isSome)
+            return true;
+
+        return EqualityComparer<T>.Default.Equals(_value, other._value);
+    }
+
+    /// <summary>
+    /// Indicates whether the current object is equal to another object.
+    /// </summary>
+    /// <param name="obj">An object to compare with this object.</param>
+    /// <returns>
+    /// <c>true</c> if the current object is equal to the <paramref name="obj"/> parameter;
+    /// otherwise, <c>false</c>.
+    /// </returns>
+    public override bool Equals([NotNullWhen(true)] object? obj)
+        => obj is Option<T> opt && Equals(opt);
+
+    /// <summary>
+    /// Retrieves the hash code of the object contained by the <see cref="Option{T}"/>, if any.
+    /// </summary>
+    /// <returns>
+    /// The hash code of the object returned by the <see cref="WhenSome"/> method, if that
+    /// method returns <c>true</c>, or zero if it returns <c>false</c>.
+    /// </returns>
+    public override int GetHashCode()
+        => _isSome ? _value.GetHashCode() : 0;
+
+    /// <summary>
+    /// Returns the text representation of the value of the current <see cref="Option{T}"/> object.
+    /// </summary>
+    /// <returns>
+    /// The text representation of the value of the current <see cref="Option{T}"/> object.
+    /// </returns>
+    public override string ToString()
+    {
+        return _isSome ? $"Some({_value})" : "None";
+    }
+
+    /// <summary>
+    /// Formats the value of the current <see cref="Option{T}"/> using the specified format.
+    /// </summary>
+    /// <param name="format">
+    /// The format to use, or a null reference to use the default format defined for
+    /// the type of the contained value.
+    /// </param>
+    /// <param name="formatProvider">
+    /// The provider to use to format the value, or a null reference to obtain the
+    /// format information from the current locale setting of the operating system.
+    /// </param>
+    /// <returns>The value of the current instance in the specified format.</returns>
+    public string ToString(string? format, IFormatProvider? formatProvider)
+    {
+        if (string.IsNullOrEmpty(format))
+        {
+            return _isSome
+                ? string.Create(formatProvider, $"Some({_value})")
+                : "None";
+        }
+
+        return _isSome
+            ? string.Format(formatProvider, "Some({0:" + format + "})", _value)
+            : "None";
+    }
+
+    /// <summary>
+    /// Tries to format the value of the current instance into the provided span of characters.
+    /// </summary>
+    /// <param name="destination">The span in which to write this instance's value formatted as a span of characters.</param>
+    /// <param name="charsWritten">When this method returns, contains the number of characters that were written in destination.</param>
+    /// <param name="format">
+    /// A span containing the characters that represent a standard or custom format string that defines the acceptable format for destination.
+    /// </param>
+    /// <param name="provider">An optional object that supplies culture-specific formatting information for destination.</param>
+    /// <returns><c>true</c> if the formatting was successful; otherwise, <c>false</c>.</returns>
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+    {
+        if (_isSome)
+        {
+            if (_value is ISpanFormattable spanFormattable)
+            {
+                if ("Some(".TryCopyTo(destination) && spanFormattable.TryFormat(destination[5..], out var innerWritten, format, provider))
+                {
+                    destination = destination[(innerWritten + 5)..];
+                    if (!destination.IsEmpty)
+                    {
+                        destination[0] = ')';
+                        charsWritten = innerWritten + 6;
+                        return true;
+                    }
+                }
+
+                charsWritten = 0;
+                return false;
+            }
+            else
+            {
+                var output = this.ToString(format.IsEmpty ? null : format.ToString(), provider);
+
+                if (output is not null && output.TryCopyTo(destination))
+                {
+                    charsWritten = output.Length;
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            if ("None".TryCopyTo(destination))
+            {
+                charsWritten = 4;
+                return true;
+            }
+        }
+
+        charsWritten = 0;
         return false;
     }
 
-    public override bool Equals(object? obj) => obj is Option<T> other && Equals(other);
-
-    public override int GetHashCode() => IsSome ? _value?.GetHashCode() ?? 0 : 0;
-
-    public static bool operator ==(Option<T> left, Option<T> right) => left.Equals(right);
-    public static bool operator !=(Option<T> left, Option<T> right) => !(left == right);
-
-    /// <summary>
-    /// Implicit conversion from T to Option&lt;T&gt;.
-    /// </summary>
-    public static implicit operator Option<T>(T value) => value is null ? None() : Some(value);
-    
-
-    /// <summary>
-    /// Implicit conversion from Option&lt;T&gt; to T.
-    /// </summary>
-    public static implicit operator T(Option<T> option) => option.Value;
-
-    /// <summary>
-    /// Implicit conversion from T to Option&lt;T&gt; (wraps non-null values).
-    /// </summary>
-    public static implicit operator Option<T>?(T? value)
-        => value is null ? None() : Some(value);
-
-    /// <summary>
-    /// Implicit conversion from None to Option&lt;T&gt;.
-    /// </summary>
-    public static implicit operator Option<T>(None _) => EmptyOption;
-
-    /// <summary>
-    /// Explicit conversion from Option&lt;T&gt; to bool indicating presence.
-    /// </summary>
-    public static explicit operator bool(Option<T> option) => option.IsSome;
-    
-
-    /// <summary>
-    /// Returns the original option if it contains a value, otherwise returns the alternative.
-    /// </summary>
-    public Option<T> Or(Option<T> alternative) => IsSome ? this : alternative;
-
-    /// <summary>
-    /// Returns the original option if it contains a value, otherwise evaluates and returns the alternative.
-    /// </summary>
-    public Option<T> OrElse(Func<Option<T>> alternativeFactory) => IsSome ? this : alternativeFactory();
-
-    /// <summary>
-    /// Maps the value if present, otherwise returns the provided default.
-    /// </summary>
-    public Option<U> MapOr<U>(Func<T, U> mapper, U defaultValue)
-        => IsSome ? Option<U>.Some(mapper(_value)) : Option<U>.Some(defaultValue);
-
-    /// <summary>
-    /// Maps the value if present, otherwise evaluates and returns the default.
-    /// </summary>
-    public Option<U> MapOrElse<U>(Func<T, U> mapper, Func<U> defaultValueFactory)
-        => IsSome ? Option<U>.Some(mapper(_value)) : Option<U>.Some(defaultValueFactory());
-
-    /// <summary>
-    /// Executes the action if the value is present.
-    /// </summary>
-    public Option<T> Inspect(Action<T> action)
+#if NET8_0_OR_GREATER
+    /// <inheritdoc/>
+    public bool TryFormat(Span<byte> utf8Destination, out int bytesWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
     {
-        if (IsSome) action(_value);
-        return this;
+        if (_isSome)
+        {
+            if (_value is IUtf8SpanFormattable spanFormattable)
+            {
+                if ("Some("u8.TryCopyTo(utf8Destination) && spanFormattable.TryFormat(utf8Destination[5..], out int innerWritten, format, provider))
+                {
+                    utf8Destination = utf8Destination[(innerWritten + 5)..];
+                    if (!utf8Destination.IsEmpty)
+                    {
+                        utf8Destination[0] = (byte)')';
+                        bytesWritten = innerWritten + 6;
+                        return true;
+                    }
+                }
+
+                bytesWritten = 0;
+                return false;
+            }
+            else
+            {
+                var output = this.ToString(format.IsEmpty ? null : format.ToString(), provider);
+
+                if (output is not null && utf8Destination.Length >= output.Length)
+                {
+                    Utf8.FromUtf16(output, utf8Destination, out _, out bytesWritten);
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            if ("None"u8.TryCopyTo(utf8Destination))
+            {
+                bytesWritten = 4;
+                return true;
+            }
+        }
+
+        bytesWritten = 0;
+        return false;
     }
+#endif
 
     /// <summary>
-    /// Asynchronously maps the value if present.
+    /// Compares the current instance with another object of the same type and returns an integer
+    /// that indicates whether the current instance precedes, follows, or occurs in the same
+    /// position in the sort order as the other object.
+    /// <para><c>Some</c> compares as less than any <c>None</c>, while two <c>Some</c> compare as their contained values would in <typeparamref name="T"/>.</para>
     /// </summary>
-    public async Task<Option<U>> MapAsync<U>(Func<T, Task<U>> mapperAsync)
-        => IsSome ? Option<U>.Some(await mapperAsync(_value)) : Option<U>.None();
-
-    /// <summary>
-    /// Asynchronously applies a function returning another Option if present.
-    /// </summary>
-    public async Task<Option<U>> AndThenAsync<U>(Func<T, Task<Option<U>>> binderAsync)
-        => IsSome ? await binderAsync(_value) : Option<U>.None();
-
-    
-    /// <summary>
-    /// Pattern matches the Option's state
-    /// </summary>
-    /// <typeparam name="TResult">Result type</typeparam>
-    /// <param name="some">Handler for Some case</param>
-    /// <param name="none">Handler for None case</param>
-    /// <returns>The result of the matched handler</returns>
-    [DebuggerStepThrough]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TResult Match<TResult>(Func<T, TResult> some, Func<TResult> none)
-    {
-        if (some == null) throw new ArgumentNullException(nameof(some));
-        if (none == null) throw new ArgumentNullException(nameof(none));
-        
-        return IsSome ? some(_value) : none();
-    }
-
-    /// <summary>
-    /// Pattern matches the Option's state (void version)
-    /// </summary>
-    [DebuggerStepThrough]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Match(Action<T> some, Action none)
-    {
-        if (some == null) throw new ArgumentNullException(nameof(some));
-        if (none == null) throw new ArgumentNullException(nameof(none));
-        
-        if (IsSome) some(_value); else none();
-    }
-
-    /// <summary>
-    /// Pattern matches the Option's state with a default None value
-    /// </summary>
-    [DebuggerStepThrough]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TResult Match<TResult>(Func<T, TResult> some, TResult none)
-    {
-        if (some == null) throw new ArgumentNullException(nameof(some));
-        return IsSome ? some(_value) : none;
-    }
-    
-    /// <summary>
-    /// Combines this <see cref="Option{T}"/> with another <see cref="Option{U}"/> into a single Option&lt;ValueTuple&lt;T, U&gt;&gt;.
-    /// </summary>
-    /// <typeparam name="U">The type of the value in the other option.</typeparam>
-    /// <param name="other">The other option to combine with.</param>
+    /// <param name="other"></param>
     /// <returns>
-    /// <see cref="Option.Some{T}(T)"/> containing a tuple of both values if both options are <c>Some</c>;
-    /// otherwise, <see cref="Option.None{T}"/>.
+    /// <c>-1</c> if this instance precendes <paramref name="other"/>, <c>0</c> if they are equal, and <c>1</c> if this instance follows <paramref name="other"/>.
     /// </returns>
-    /// <example>
-    /// <code>
-    /// var a = Option.Some(1);
-    /// var b = Option.Some("hello");
-    /// var zipped = a.Zip(b); // Some((1, "hello"))
-    /// </code>
-    /// </example>
-    public Option<(T, U)> Zip<U>(Option<U> other) =>
-        IsSome && other.IsSome ? Option<(T, U)>.Some((Value, other.Value)) : Option<(T, U)>.None();
-
-    /// <summary>
-    /// Returns this option if the contained value satisfies the given predicate; otherwise, returns <see cref="Option.None{T}"/>.
-    /// </summary>
-    /// <param name="predicate">The predicate to test the value against.</param>
-    /// <returns>
-    /// <see cref="Option.Some{T}(T)"/> if the option is <c>Some</c> and the predicate returns <c>true</c>;
-    /// otherwise, <see cref="Option.None{T}"/>.
-    /// </returns>
-    /// <example>
-    /// <code>
-    /// var age = Option.Some(25);
-    /// var adult = age.Filter(a => a >= 18); // Some(25)
-    /// var child = age.Filter(a => a &lt; 18);  // None
-    /// </code>
-    /// </example>
-    public Option<T> Filter(Func<T, bool> predicate) =>
-        IsSome && predicate(_value) ? this : None();
-    
-    
-    /// <summary>
-    /// Deconstructs the option into a flag and value.
-    /// </summary>
-    public void Deconstruct(out bool isSome, out T? value)
+    public int CompareTo(Option<T> other)
     {
-        isSome = IsSome;
-        value = IsSome ? _value : default;
+        return (_isSome, other._isSome) switch
+        {
+            (true, true) => Comparer<T>.Default.Compare(_value, other._value),
+            (true, false) => -1,
+            (false, true) => 1,
+            (false, false) => 0
+        };
     }
 
     /// <summary>
-    /// Returns a string that represents the current option.
+    /// Determines whether one <c>Option</c> is equal to another <c>Option</c>.
     /// </summary>
-    public override string ToString() => IsSome ? $"Some({_value})" : "None";
+    /// <param name="left">The first <c>Option</c> to compare.</param>
+    /// <param name="right">The second <c>Option</c> to compare.</param>
+    /// <returns><c>true</c> if the two values are equal.</returns>
+    public static bool operator ==(Option<T> left, Option<T> right)
+        => left.Equals(right);
+
+    /// <summary>
+    /// Determines whether one <c>Option</c> is not equal to another <c>Option</c>.
+    /// </summary>
+    /// <param name="left">The first <c>Option</c> to compare.</param>
+    /// <param name="right">The second <c>Option</c> to compare.</param>
+    /// <returns><c>true</c> if the two values are not equal.</returns>
+    public static bool operator !=(Option<T> left, Option<T> right)
+        => !left.Equals(right);
+
+    /// <summary>
+    /// Determines whether one <c>Option</c> is greater than another <c>Option</c>.
+    /// </summary>
+    /// <param name="left">The first <c>Option</c> to compare.</param>
+    /// <param name="right">The second <c>Option</c> to compare.</param>
+    /// <returns><c>true</c> if the <paramref name="left"/> parameter is greater than the <paramref name="right"/> parameter.</returns>
+    public static bool operator >(Option<T> left, Option<T> right)
+        => left.CompareTo(right) > 0;
+
+    /// <summary>
+    /// Determines whether one <c>Option</c> is less than another <c>Option</c>.
+    /// </summary>
+    /// <param name="left">The first <c>Option</c> to compare.</param>
+    /// <param name="right">The second <c>Option</c> to compare.</param>
+    /// <returns><c>true</c> if the <paramref name="left"/> parameter is less than the <paramref name="right"/> parameter.</returns>
+    public static bool operator <(Option<T> left, Option<T> right)
+        => left.CompareTo(right) < 0;
+
+    /// <summary>
+    /// Determines whether one <c>Option</c> is greater than or equal to another <c>Option</c>.
+    /// </summary>
+    /// <param name="left">The first <c>Option</c> to compare.</param>
+    /// <param name="right">The second <c>Option</c> to compare.</param>
+    /// <returns><c>true</c> if the <paramref name="left"/> parameter is greater than or equal to the <paramref name="right"/> parameter.</returns>
+    public static bool operator >=(Option<T> left, Option<T> right)
+        => left.CompareTo(right) >= 0;
+
+    /// <summary>
+    /// Determines whether one <c>Option</c> is less than or equal to another <c>Option</c>.
+    /// </summary>
+    /// <param name="left">The first <c>Option</c> to compare.</param>
+    /// <param name="right">The second <c>Option</c> to compare.</param>
+    /// <returns><c>true</c> if the <paramref name="left"/> parameter is less than or equal to the <paramref name="right"/> parameter.</returns>
+    public static bool operator <=(Option<T> left, Option<T> right)
+        => left.CompareTo(right) <= 0;
+    
+    public static implicit operator Option<T>(T? value) => value != null ? Option.Some(value) : Option.None<T>();
     
 }
-

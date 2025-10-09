@@ -8,13 +8,15 @@
         <NoWarn>1591</NoWarn>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageId>SharpResults</PackageId>
-        <Version>0.3.2</Version>
+        <Version>0.4.0</Version>
+        <ReleaseVersion>0.4.0</ReleaseVersion>
         <Authors>Safwan Abdulghani</Authors>
-        <Company>YourCompany</Company>
+        <Company>Safwan.pro</Company>
         <Description>
-            A lightweight, functional Result&lt;T&gt; and Result&lt;T, TError&gt; implementation
+            A lightweight, functional Result&lt;T&gt; and Result&lt;T, TError&gt; and Option&lt;T&gt; implementation
             for C# inspired by Rust.
         </Description>
+        <PackageDescription>Result and Option types for C#, inspired by Rust</PackageDescription>
         <PackageTags>Result Error Functional CSharp SharpResults</PackageTags>
         <PackageProjectUrl>https://github.com/safwa1/SharpResults</PackageProjectUrl>
         <RepositoryUrl>https://github.com/safwa1/SharpResults</RepositoryUrl>
@@ -24,7 +26,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <None Include="README.md" Pack="true" PackagePath="\" />
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
     
 </Project>
