@@ -6,7 +6,6 @@
 [![NuGet](https://img.shields.io/nuget/v/SharpResults.svg)](https://www.nuget.org/packages/SharpResults/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://img.shields.io/nuget/dt/SharpResults.svg)](https://www.nuget.org/packages/SharpResults/)
-[![Build Status](https://github.com/your-username/SharpResults/actions/workflows/publish.yml/badge.svg)](https://github.com/your-username/SharpResults/actions/workflows/publish.yml)
 
 </div>
 
@@ -76,7 +75,9 @@ public Result<int, string> ParseInteger(string input)
 {
     if (int.TryParse(input, out int value))
     {
-        return Result.Ok<int, string>(value); // Or simply Result.Ok(value) with type inference or return value directly using implicit conversion
+        return Result.Ok<int, string>(value); 
+        // Or simply Result.Ok(value) with type inference 
+        // Or return value directly using implicit conversion
     }
     return Result.Err<int, string>($"'{input}' is not a valid integer.");
 }
@@ -89,6 +90,16 @@ result.Match(
     err: error => Console.WriteLine($"Error: {error}")
 );
 // Output: Success: 123
+
+// Or use it with native pattern matching
+var message = result switch
+{
+    (true, var value, _) => $"Success: {value}",
+    (false, _, var error) => $"Error: {error}"
+};
+
+Console.WriteLine(message);
+// Output: Success: 123 OR Error: 'abc' is not a valid integer.
 
 var failedResult = ParseInteger("abc");
 
