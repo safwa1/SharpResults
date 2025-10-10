@@ -43,7 +43,7 @@ public static class ResultExtensions
     /// <exception cref="System.ArgumentNullException">Thrown if <paramref name="errMapper"/> is null.</exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result<T, T2Err> MapErr<T, T1Err, T2Err>(this Result<T, T1Err> self, Func<T1Err, T2Err> errMapper)
-        where T : notnull 
+        where T : notnull
         where T2Err : notnull
         where T1Err : notnull
     {
@@ -117,7 +117,7 @@ public static class ResultExtensions
     /// <returns>The contained <c>Ok</c> value, or the provided default.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static T UnwrapOr<T, TErr>(this Result<T, TErr> self, T defaultValue)
-        where T : notnull 
+        where T : notnull
         where TErr : notnull
     {
         return self.WhenOk(out var value) ? value : defaultValue;
@@ -203,7 +203,7 @@ public static class ResultExtensions
     /// <returns>The <c>Ok</c> value of the result, or the result of passing the <c>Err</c> value to <paramref name="elseFunc"/>.</returns>
     public static Result<T, T2Err> OrElse<T, T1Err, T2Err>(this Result<T, T1Err> self,
         Func<T1Err, Result<T, T2Err>> elseFunc)
-        where T : notnull 
+        where T : notnull
         where T2Err : notnull
         where T1Err : notnull
     {
@@ -221,7 +221,7 @@ public static class ResultExtensions
     /// <param name="self">The result.</param>
     /// <returns>The inner result.</returns>
     public static Result<T, TErr> Flatten<T, TErr>(this Result<Result<T, TErr>, TErr> self)
-        where T : notnull 
+        where T : notnull
         where TErr : notnull
     {
         return self.Match(
@@ -231,7 +231,8 @@ public static class ResultExtensions
     }
 
 
-    public static Result<T, TErr> Inspect<T, TErr>(this Result<T, TErr> self, Action<T> action) where T : notnull where TErr : notnull
+    public static Result<T, TErr> Inspect<T, TErr>(this Result<T, TErr> self, Action<T> action)
+        where T : notnull where TErr : notnull
     {
         ThrowIfNull(action);
         if (self.IsOk)
@@ -242,7 +243,8 @@ public static class ResultExtensions
         return self;
     }
 
-    public static Result<T, TErr> InspectErr<T, TErr>(this Result<T, TErr> self, Action<TErr> action) where T : notnull where TErr : notnull
+    public static Result<T, TErr> InspectErr<T, TErr>(this Result<T, TErr> self, Action<TErr> action)
+        where T : notnull where TErr : notnull
     {
         if (self.IsErr)
         {
@@ -299,5 +301,27 @@ public static class ResultExtensions
         return self.AndThen(t =>
             binder(t).Map(u => projector(t, u))
         );
+    }
+
+    /// <summary>
+    /// Filters a result based on a predicate.
+    /// If the predicate fails, returns an Err with the provided error.
+    /// </summary>
+    public static Result<T, TErr> Where<T, TErr>(
+        this Result<T, TErr> result,
+        Func<T, bool> predicate,
+        Func<TErr> onFailure
+    )
+        where T : notnull
+        where TErr : notnull
+    {
+        if (result.IsErr)
+            return result;
+
+        var value = result.Unwrap();
+        if (!predicate(value))
+            return Result<T, TErr>.Err(onFailure());
+
+        return result;
     }
 }

@@ -578,23 +578,13 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     public static Result<T, TErr> Err(TErr error) => new(error);
 
     /// <summary>
-    /// Deconstructs the result into its success state.
-    /// Enables syntax like: var (isOk) = result;
-    /// </summary>
-    /// <param name="isOk">True if the result is Ok, false if Err.</param>
-    public void Deconstruct(out bool isOk)
-    {
-        isOk = _isOk;
-    }
-
-    /// <summary>
     /// Deconstructs the result into its Ok value and Err value.
     /// Enables syntax like: var (value, err) = result;
     /// Note: Only one of these will be non-null depending on the result state.
     /// </summary>
     /// <param name="value">The Ok value if present, otherwise default.</param>
     /// <param name="err">The Err value if present, otherwise default.</param>
-    public void Deconstruct([MaybeNullWhen(false)] out T? value, [MaybeNullWhen(true)] out TErr? err)
+    public void Deconstruct(out T? value, out TErr? err)
     {
         value = _isOk ? _value : default;
         err = !_isOk ? _err : default;
@@ -609,11 +599,19 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     /// <param name="value">The Ok value if present, otherwise default.</param>
     /// <param name="err">The Err value if present, otherwise default.</param>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public void Deconstruct(out bool isOk, [MaybeNullWhen(false)] out T value, [MaybeNullWhen(true)] out TErr err)
+    public void Deconstruct(out bool isOk, out T? value, out TErr? err)
     {
         isOk = _isOk;
-        value = _value;
-        err = _err;
+        if (isOk)
+        {
+            value = _value;
+            err = default;
+        }
+        else
+        {
+            value = default;
+            err = _err;
+        }
     }
     
     /// <summary>
@@ -623,14 +621,47 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     public static implicit operator Result<T, TErr>(T value) => Ok(value);
 
     /// <summary>
-    /// Implicitly converts an error to a failed result.
+    /// Implicitly converts an <typeparamref name="TErr"/> value into a failed <see cref="Result{T, TErr}"/>.
+    /// Enables direct assignment of an error to a result without calling <c>Err()</c>.
     /// </summary>
-    /// <param name="error">The error to convert.</param>
+    /// <param name="error">The error value to wrap as a failed result.</param>
     public static implicit operator Result<T, TErr>(TErr error) => Err(error);
     
+    /// <summary>
+    /// Explicitly converts a <see cref="Result{T, TErr}"/> to a <see cref="bool"/> indicating success.
+    /// Returns <see langword="true"/> if the result is Ok; otherwise <see langword="false"/>.
+    /// </summary>
+    /// <param name="result">The result to evaluate.</param>
+    /// <returns><see langword="true"/> if Ok; otherwise <see langword="false"/>.</returns>
     public static explicit operator bool(Result<T, TErr> result) => result.IsOk;
     
+    /// <summary>
+    /// Explicitly converts a <see cref="Result{T, TErr}"/> to it's Ok value.
+    /// Throws an exception if the result represents an error.
+    /// </summary>
+    /// <param name="result">The result to unwrap.</param>
+    /// <returns>The contained Ok value.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the result is an Err.</exception>
     public static explicit operator T(Result<T, TErr> result) => result.Unwrap();
     
+    /// <summary>
+    /// Explicitly converts a <see cref="Result{T, TErr}"/> to its Err value.
+    /// Throws an exception if the result represents success.
+    /// </summary>
+    /// <param name="result">The result to unwrap.</param>
+    /// <returns>The contained Err value.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the result is an Ok.</exception>
     public static explicit operator TErr(Result<T, TErr> result) => result.UnwrapErr();
 }
+
+// ModuleInitializer
+#if NET8_0_OR_GREATER
+internal static class ResultModuleInitializer
+{
+    [ModuleInitializer]
+    internal static void Init()
+    {
+        Console.WriteLine("⚠️ SharpResults loaded. Always use Ok(...) or Err(...) factories; default(Result<,>) is unsafe.");
+    }
+}
+#endif

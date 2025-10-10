@@ -268,15 +268,13 @@ public readonly struct Option<T> : IEquatable<Option<T>>, IComparable<Option<T>>
                 charsWritten = 0;
                 return false;
             }
-            else
-            {
-                var output = this.ToString(format.IsEmpty ? null : format.ToString(), provider);
 
-                if (output is not null && output.TryCopyTo(destination))
-                {
-                    charsWritten = output.Length;
-                    return true;
-                }
+            var output = this.ToString(format.IsEmpty ? null : format.ToString(), provider);
+
+            if (output is not null && output.TryCopyTo(destination))
+            {
+                charsWritten = output.Length;
+                return true;
             }
         }
         else
@@ -314,15 +312,13 @@ public readonly struct Option<T> : IEquatable<Option<T>>, IComparable<Option<T>>
                 bytesWritten = 0;
                 return false;
             }
-            else
-            {
-                var output = this.ToString(format.IsEmpty ? null : format.ToString(), provider);
 
-                if (output is not null && utf8Destination.Length >= output.Length)
-                {
-                    Utf8.FromUtf16(output, utf8Destination, out _, out bytesWritten);
-                    return true;
-                }
+            var output = this.ToString(format.IsEmpty ? null : format.ToString(), provider);
+
+            if (output is not null && utf8Destination.Length >= output.Length)
+            {
+                Utf8.FromUtf16(output, utf8Destination, out _, out bytesWritten);
+                return true;
             }
         }
         else
@@ -416,4 +412,15 @@ public readonly struct Option<T> : IEquatable<Option<T>>, IComparable<Option<T>>
     
     public static implicit operator Option<T>(T? value) => value != null ? Option.Some(value) : Option.None<T>();
     
+#if NET8_0_OR_GREATER
+    /// <summary>
+    /// Enables native pattern matching via deconstruction syntax.
+    /// </summary>
+    public void Deconstruct(out bool isSome, out T value)
+    {
+        isSome = _isSome;
+        value = _value;
+    }
+#endif
+
 }

@@ -110,6 +110,46 @@ public static class Result
             return Err<T>(ex);
         }
     }
+    
+    /// <summary>
+    /// Attempts to call an asynchronous <paramref name="func"/>, wrapping the returned value in an <c>Ok</c> result.
+    /// Any exceptions will be caught and returned in an <c>Err</c> result.
+    /// </summary>
+    /// <typeparam name="T">The type of the value returned by the given function.</typeparam>
+    /// <param name="func">The asynchronous function to attempt to call.</param>
+    /// <returns>The return value of <paramref name="func"/> wrapped in <c>Ok</c>, or <c>Err</c> containing any exception that was thrown.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static async Task<Result<T, Exception>> TryAsync<T>(Func<Task<T>> func)
+        where T : notnull
+    {
+        try
+        {
+            var value = await func().ConfigureAwait(false);
+            return Ok<T, Exception>(value);
+        }
+        catch (Exception ex)
+        {
+            return Err<T>(ex);
+        }
+    }
+
+    /// <summary>
+    /// Overload for functions returning ValueTask.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static async Task<Result<T, Exception>> TryAsync<T>(Func<ValueTask<T>> func)
+        where T : notnull
+    {
+        try
+        {
+            var value = await func().ConfigureAwait(false);
+            return Ok<T, Exception>(value);
+        }
+        catch (Exception ex)
+        {
+            return Err<T>(ex);
+        }
+    }
 
     /// <summary>
     /// Executes the specified function and returns a <see cref="Result{T, Exception}"/>. 
