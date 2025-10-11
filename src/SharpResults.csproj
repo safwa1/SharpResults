@@ -8,8 +8,8 @@
         <NoWarn>1591</NoWarn>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageId>SharpResults</PackageId>
-        <Version>0.4.0</Version>
-        <ReleaseVersion>0.4.0</ReleaseVersion>
+        <Version>0.4.1</Version>
+        <ReleaseVersion>0.4.1</ReleaseVersion>
         <Authors>Safwan Abdulghani</Authors>
         <Company>Safwan.pro</Company>
         <Description>
