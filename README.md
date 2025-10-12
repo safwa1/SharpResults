@@ -1,4 +1,4 @@
-# SharpResults: Robust and Expressive Error Handling for .NET
+# SharpResults
 
 <div align="center">
 
@@ -9,64 +9,43 @@
 
 </div>
 
-**SharpResults** is a lightweight, zero-dependency C# library that brings the power of functional-style error handling to your .NET projects. It provides `Result<T, TError>` and `Option<T>` types, enabling you to write more robust, predictable, and readable code by making success/failure and presence/absence states explicit. Move away from exception-driven control flow and embrace a more expressive way to handle errors.
+A lightweight C# library for functional-style error handling in .NET. No dependencies, just clean error handling with `Result<T, TError>` and `Option<T>` types.
 
----
+## Why SharpResults?
 
-## 🚀 Key Features
+Tired of try-catch blocks everywhere? Want to make errors explicit and impossible to ignore? SharpResults helps you write safer code by representing success/failure and presence/absence right in your type signatures. No more hidden exceptions or null reference errors sneaking up on you.
 
-- 🛡️ **Type-Safe Errors**: Eliminate runtime surprises by representing errors in the type system.
-- ⛓️ **Fluent & Chainable API**: Seamlessly compose complex operations with a rich set of extension methods like `Map`, `Then`, `Match`, and `OrElse`.
-- 🧩 **Full LINQ Integration**: Use `Result` and `Option` types directly within C# query syntax for elegant data manipulation.
-- ⚡ **First-Class Async Support**: Built-in `async/await` support for all major operations (`MapAsync`, `ThenAsync`, etc.).
-- 🎯 **Modern .NET**: Takes advantage of the latest C# and .NET features for a clean and performant API.
-- 📦 **Easy Integration**: Simple to drop into any existing project.
--  **JSON Serialization**: Built-in converters for `System.Text.Json`.
-- 🪶 **Lightweight**: No external dependencies.
+## What's in the box
 
-## 📦 Installation
+- Type-safe error handling - your errors are part of the type system
+- Chainable operations with `Map`, `AndThen`, `Match`, and friends
+- Works great with LINQ queries
+- Full async/await support
+- Pattern matching and deconstruction
+- Implicit conversions for cleaner code
+- JSON serialization out of the box
+- NumericOption for mathematical operations
+- Unit type for void-like operations
+- Zero dependencies
+- Built for .NET 8+
 
-Install SharpResults easily via NuGet.
+## Installation
 
-**Package Manager Console:**
 ```powershell
 Install-Package SharpResults
 ```
 
-**.NET CLI:**
+or
+
 ```bash
 dotnet add package SharpResults
 ```
 
----
+## Quick Start
 
-## Core Concepts
+### Result - when things might fail
 
-### `Result<T, TError>`: Handling Success or Failure
-
-The `Result` type represents an operation that can succeed with a value of type `T` or fail with an error of type `TError`.
-
-- **`Ok(T)`**: Represents a successful result.
-- **`Err(TError)`**: Represents a failure.
-
-This approach forces you to handle potential errors at compile time, preventing unexpected runtime exceptions.
-
-### `Option<T>`: Handling Presence or Absence
-
-The `Option` type represents a value that may or may not be present.
-
-- **`Some(T)`**: Represents the presence of a value.
-- **`None`**: Represents the absence of a value.
-
-This is a robust alternative to using `null`, eliminating `NullReferenceException` errors and making your code's intent clearer.
-
----
-
-## 📖 Usage Examples
-
-### 1. Basic `Result` Usage
-
-Consider a function that might fail, like parsing a number from a string. Instead of throwing an exception, it can return a `Result`.
+Instead of throwing exceptions, return a `Result<T, TError>`. It's either `Ok` with a value, or `Err` with an error.
 
 ```csharp
 using SharpResults;
@@ -74,77 +53,110 @@ using SharpResults;
 public Result<int, string> ParseInteger(string input)
 {
     if (int.TryParse(input, out int value))
-    {
-        return Result.Ok<int, string>(value); 
-        // Or simply Result.Ok(value) with type inference 
-        // Or return value directly using implicit conversion
-    }
-    return Result.Err<int, string>($"'{input}' is not a valid integer.");
+        return value; // Implicit conversion to Ok
+    
+    return "Not a valid integer"; // Implicit conversion to Err
 }
 
-// --- Usage ---
+// Use it like this
 var result = ParseInteger("123");
 
 result.Match(
     ok: value => Console.WriteLine($"Success: {value}"),
     err: error => Console.WriteLine($"Error: {error}")
 );
-// Output: Success: 123
 
-// Or use it with native pattern matching
+// Or with pattern matching
 var message = result switch
 {
     (true, var value, _) => $"Success: {value}",
     (false, _, var error) => $"Error: {error}"
 };
 
-Console.WriteLine(message);
-// Output: Success: 123 OR Error: 'abc' is not a valid integer.
-
-var failedResult = ParseInteger("abc");
-
-if (failedResult.IsErr)
+// Or check the state directly
+if (result.IsOk)
 {
-    Console.WriteLine(failedResult.UnwrapErr());
-    // Output: 'abc' is not a valid integer.
+    var value = result.Unwrap();
+    Console.WriteLine($"Got: {value}");
 }
 ```
 
-### 2. Chaining Operations with `Result`
+### Creating Results
 
-`Result` provides a fluent API for chaining operations. The chain continues as long as results are `Ok`; otherwise, it short-circuits and propagates the `Err`.
+Several ways to create results:
+
+```csharp
+// Explicit factory methods
+var ok = Result.Ok<int, string>(42);
+var err = Result.Err<int, string>("Something went wrong");
+
+// Implicit conversions (cleaner!)
+Result<int, string> result1 = 42; // Converts to Ok
+Result<int, string> result2 = "Error"; // Converts to Err
+
+// Try pattern - catches exceptions
+var result3 = Result.Try(() => int.Parse("123"));
+var result4 = await Result.TryAsync(async () => await GetDataAsync());
+
+// From other types
+var fromOption = Result.From(someOption);
+var fromFunc = Result.From(() => DoSomething());
+```
+
+### Working with Results
+
+```csharp
+// Extract values safely
+var value = result.UnwrapOr(0); // Returns value or default
+var value2 = result.UnwrapOrElse(err => err.Length); // Compute default from error
+var value3 = result.Expect("Expected a number"); // Throws with custom message
+
+// Check state
+if (result.WhenOk(out var val))
+    Console.WriteLine($"Got {val}");
+
+if (result.WhenErr(out var error))
+    Console.WriteLine($"Error: {error}");
+
+// Deconstruction
+var (value, error) = result; // One will be null
+```
+
+### Chaining operations
+
+Operations chain together smoothly. If any step fails, the error propagates automatically:
 
 ```csharp
 public Result<double, string> GetDiscountedPrice(string userId, string productId)
 {
     return GetUser(userId)
-        .Then(user => GetProduct(productId).Map(product => (user, product)))
-        .Then(data => CalculateDiscount(data.user, data.product))
-        .Map(discount => ApplyDiscount(GetProduct(productId).Unwrap(), discount));
+        .AndThen(user => GetProduct(productId).Map(product => (user, product)))
+        .AndThen(data => CalculateDiscount(data.user, data.product))
+        .Map(discount => ApplyDiscount(productPrice, discount));
 }
 
-// Dummy methods for demonstration
-private Result<User, string> GetUser(string id) => Result.Ok(new User { Id = id });
-private Result<Product, string> GetProduct(string id) => Result.Ok(new Product { Price = 100.0 });
-private Result<double, string> CalculateDiscount(User user, Product product) => Result.Ok(0.1); // 10% discount
-private double ApplyDiscount(Product product, double discount) => product.Price * (1 - discount);
+// Or with LINQ syntax
+var result = from user in GetUser(userId)
+             from product in GetProduct(productId)
+             from discount in CalculateDiscount(user, product)
+             select ApplyDiscount(product.Price, discount);
 ```
 
-### 3. Basic `Option` Usage
+### Option - when values might not exist
 
-Use `Option` for functions that may not return a value, like finding an item in a collection.
+Use `Option<T>` instead of null. It's either `Some(value)` or `None`.
 
 ```csharp
-using SharpResults;
-
 public Option<User> FindUserById(string id)
 {
-    // In a real app, you would query a database.
     var user = _users.FirstOrDefault(u => u.Id == id);
-    return Option.Create(user); // Creates Some(user) if not null, otherwise None
+    return Option.Create(user); // Some(user) if found, None otherwise
 }
 
-// --- Usage ---
+// Or use implicit conversion
+Option<int> opt = 42; // Becomes Some(42)
+
+// Usage
 var option = FindUserById("user-123");
 
 option.Match(
@@ -152,106 +164,585 @@ option.Match(
     none: () => Console.WriteLine("User not found.")
 );
 
-// Or use it with a default value
+// Provide defaults easily
 var userName = option.Map(user => user.Name).UnwrapOr("Guest");
+
+// Pattern matching
+if (option.WhenSome(out var user))
+    Console.WriteLine($"Found: {user.Name}");
+
+// Deconstruction (NET8+)
+if (option is (true, var value))
+    Console.WriteLine($"Got: {value}");
+
+// Filter and chain
+var adminOption = FindUserById("123")
+    .Filter(u => u.IsAdmin)
+    .Map(u => u.Name);
 ```
 
-### 4. Asynchronous Operations
+### NumericOption - Options with math
 
-SharpResults provides seamless async support.
+For numeric types, use `NumericOption<T>` to perform mathematical operations:
+
+```csharp
+NumericOption<int> a = 5;
+NumericOption<int> b = 10;
+
+var sum = a + b; // Some(15)
+var product = a * b; // Some(50)
+
+NumericOption<int> none = NumericOption<int>.None;
+var invalid = a + none; // None - operations with None produce None
+
+// Numeric checks
+bool isPositive = NumericOption.IsPositive(a); // true
+bool isEven = NumericOption.IsEvenInteger(b); // true
+
+// Parse numbers safely
+var parsed = NumericOption<int>.Parse("123"); // Some(123)
+var failed = NumericOption<int>.Parse("abc"); // None
+
+// Convert between types
+Option<int> regularOption = myNumericOption; // Implicit conversion
+```
+
+### Unit type - for void-like operations
+
+When you want to return `Result` from a void method:
+
+```csharp
+public Result<Unit, string> SaveData(string data)
+{
+    try
+    {
+        File.WriteAllText("data.txt", data);
+        return Unit.Default; // Success with no value
+    }
+    catch (Exception ex)
+    {
+        return ex.Message; // Error
+    }
+}
+
+// Or use Result.From for actions
+var result = Result.From(() => File.Delete("temp.txt"));
+```
+
+### Async support
+
+Everything works seamlessly with async/await:
 
 ```csharp
 public async Task<Result<string, string>> GetUserDataAsync(string url)
 {
-    return await Result.Try(async () =>
+    return await Result.TryAsync(async () =>
     {
         using var client = new HttpClient();
-        var response = await client.GetStringAsync(url);
-        return response;
+        return await client.GetStringAsync(url);
     })
-    .MapErr(ex => ex.Message); // Map the exception to a simple string error
+    .MapErr(ex => ex.Message);
 }
 
-// --- Usage ---
-var result = await GetUserDataAsync("https://api.example.com/data");
-result.Match(
-    ok: data => Console.WriteLine("Data fetched!"),
-    err: error => Console.WriteLine($"API Error: {error}")
+// Async transformations for Result
+var result = await GetUserAsync(id)
+    .MapAsync(async user => await GetProfileAsync(user))
+    .AndThenAsync(async profile => await EnrichAsync(profile))
+    .MapOrElseAsync(
+        mapper: async data => await FormatAsync(data),
+        defaultFactory: async err => await GetDefaultAsync()
+    );
+
+// Async transformations for Option
+var option = await FindUserAsync(id)
+    .MapAsync(async user => await user.GetNameAsync())
+    .AndThenAsync(async name => await ValidateAsync(name))
+    .OrElseAsync(async () => await GetDefaultNameAsync());
+
+// Async with bool extensions
+var result = await isValid.ThenAsync(async () => await LoadDataAsync());
+var option = await hasPermission.ThenSomeAsync(GetUserDataAsync());
+
+// Work with async sequences
+await foreach (var value in asyncOptions.ValuesAsync())
+{
+    Console.WriteLine(value);
+}
+
+var firstAsync = await asyncSequence.FirstOrNoneAsync();
+var filteredAsync = await asyncSequence.FirstOrNoneAsync(x => x > 10);
+
+// Async collection operations for Results
+await foreach (var success in asyncResults.ValuesAsync())
+{
+    ProcessSuccess(success);
+}
+
+await foreach (var error in asyncResults.ErrorsAsync())
+{
+    LogError(error);
+}
+```
+
+### LINQ Integration
+
+Use results and options in LINQ queries:
+
+```csharp
+// Query syntax
+var result = from user in GetUser(id)
+             from orders in GetOrders(user.Id)
+             from total in CalculateTotal(orders)
+             select total;
+
+// Method syntax
+var names = users
+    .Select(u => FindUserName(u.Id))
+    .WhereSome() // Filter out None values
+    .ToList();
+
+// Working with collections
+var results = ids
+    .Select(id => GetUser(id))
+    .Collect(); // Result<List<User>, TError>
+```
+
+### Collection helpers
+
+Work with collections safely:
+
+```csharp
+// Safe LINQ operations
+var first = users.FirstOrNone(); // Option<User>
+var last = users.LastOrNone(u => u.IsActive);
+var single = users.SingleOrNone(u => u.Id == id);
+var element = users.ElementAtOrNone(5);
+
+// Dictionary operations
+var value = dict.GetValueOrNone(key); // Option<TValue>
+
+// Stack and Queue operations
+var peeked = stack.PeekOrNone(); // Doesn't remove
+var popped = stack.PopOrNone(); // Removes and returns
+var dequeued = queue.DequeueOrNone();
+
+// PriorityQueue
+var next = priorityQueue.PeekOrNone<Task, int>(); // (Task, Priority)
+var task = priorityQueue.DequeueOrNone<Task, int>();
+
+// Concurrent collections (thread-safe)
+var item = concurrentBag.TakeOrNone();
+var value = concurrentStack.PopOrNone();
+
+// Sets
+var found = hashSet.GetValueOrNone(searchValue);
+var item = sortedSet.GetValueOrNone(value);
+
+// SelectWhere - transform and filter in one pass
+var results = items
+    .SelectWhere(x => x > 0 ? Option.Some(x * 2) : Option.None<int>());
+
+// Extract all Some values from a sequence
+var values = options.Values(); // IEnumerable<T>
+
+// Sequence - convert list of Options to Option of list
+var allOrNone = options.Sequence(); // Option<IEnumerable<T>>
+var listOrNone = options.SequenceList(); // Option<List<T>>
+```
+
+### Bool extensions
+
+Use booleans to create Options:
+
+```csharp
+// Execute function conditionally
+var result = isValid.Then(() => ProcessData()); // Option<T>
+
+// Create Some/None based on condition  
+var option = hasPermission.ThenSome(userData); // Some(userData) or None
+```
+
+### JSON extensions
+
+Work with System.Text.Json safely:
+
+```csharp
+using SharpResults.Extensions;
+
+// JsonValue
+var number = jsonValue.GetOption<int>(); // Option<int>
+
+// JsonObject
+var name = jsonObj.GetPropValue<string>("name"); // Option<string>
+var node = jsonObj.GetPropOption("address"); // Option<JsonNode>
+
+// JsonElement
+var prop = jsonElement.GetPropOption("field"); // Option<JsonElement>
+var value = jsonElement.GetPropOption("id".AsSpan());
+```
+
+### JSON Serialization
+
+All SharpResults types work seamlessly with System.Text.Json:
+
+```csharp
+using System.Text.Json;
+
+// Option serialization
+var option = Option.Some(42);
+var json = JsonSerializer.Serialize(option); // "42"
+var none = Option.None<int>();
+var jsonNone = JsonSerializer.Serialize(none); // "null"
+
+// Result serialization
+var ok = Result.Ok<int, string>(42);
+var jsonOk = JsonSerializer.Serialize(ok); // {"ok":42}
+
+var err = Result.Err<int, string>("Error message");
+var jsonErr = JsonSerializer.Serialize(err); // {"err":"Error message"}
+
+// NumericOption serialization (.NET 7+)
+NumericOption<int> numOpt = 100;
+var jsonNum = JsonSerializer.Serialize(numOpt); // "100"
+
+// Unit serialization
+var unit = Unit.Default;
+var jsonUnit = JsonSerializer.Serialize(unit); // "null"
+
+// Deserialization works automatically
+var deserializedOpt = JsonSerializer.Deserialize<Option<int>>("42");
+var deserializedResult = JsonSerializer.Deserialize<Result<int, string>>("""{"ok":42}""");
+```
+
+Built-in JSON converters handle all the serialization automatically - no configuration needed!
+
+### Result collection operations
+
+```csharp
+// Extract all Ok values
+var successes = results.Values(); // IEnumerable<T>
+
+// Extract all Err values
+var failures = results.Errors(); // IEnumerable<TError>
+
+// Inspect without consuming
+var result = GetData()
+    .Inspect(data => Console.WriteLine($"Got: {data}"))
+    .InspectErr(err => Logger.Error(err));
+
+// Check contents
+if (result.Contains(expectedValue))
+    Console.WriteLine("Found it!");
+
+if (errorResult.ContainsErr(specificException))
+    Console.WriteLine("Expected error occurred");
+```
+
+### Option/Result interop
+
+Convert between Options and Results:
+
+```csharp
+// Option to Result
+var result = option.OkOr("Value not found"); // Result<T, string>
+var result2 = option.OkOrElse(() => new MyError("Missing"));
+
+// Result to Option
+var okOption = result.Ok(); // Option<T> - None if Err
+var errOption = result.Err(); // Option<TError> - None if Ok
+
+// Transpose nested types
+Option<Result<int, string>> optRes = /* ... */;
+Result<Option<int>, string> resOpt = optRes.Transpose();
+
+Result<Option<int>, string> resOpt2 = /* ... */;
+Option<Result<int, string>> optRes2 = resOpt2.Transpose();
+
+// NumericOption to Result
+NumericOption<int> numOpt = 42;
+var result = numOpt.OkOr("No number");
+```
+
+### LINQ Integration
+
+Use results and options in LINQ queries:
+
+```csharp
+// Query syntax
+var result = from user in GetUser(id)
+             from orders in GetOrders(user.Id)
+             from total in CalculateTotal(orders)
+             select total;
+
+// Method syntax
+var names = users
+    .Select(u => FindUserName(u.Id))
+    .WhereSome() // Filter out None values
+    .ToList();
+
+// Working with collections
+var results = ids
+    .Select(id => GetUser(id))
+    .Collect(); // Result<List<User>, TError>
+```
+
+### Advanced patterns
+
+```csharp
+// OrElse - provide alternative on error
+var result = TryPrimary()
+    .OrElse(err => TrySecondary())
+    .OrElse(err => TryTertiary());
+
+// Flatten nested results
+Result<Result<int, string>, string> nested = GetNestedResult();
+Result<int, string> flattened = nested.Flatten();
+
+// Zip multiple results
+var combined = result1.Zip(result2, (a, b) => a + b);
+
+// Exception handling with custom error types
+public record MyError(string Message, int Code);
+
+var result = Result.From(
+    () => RiskyOperation(),
+    ex => new MyError(ex.Message, 500)
 );
 ```
 
----
+### Error type helper
 
-## API Reference
+Use the built-in `Error` type for flexible error handling:
 
-### `Result<T, TError>`
+```csharp
+public Result<Data, Error> LoadData()
+{
+    try
+    {
+        return LoadFromFile();
+    }
+    catch (Exception ex)
+    {
+        return new Error(ex); // Captures exception
+    }
+}
 
-- **Constructors:** `Result.Ok(T)`, `Result.Err(TError)`
-- **Properties:** `IsOk`, `IsErr`
-- **Methods:** `Match`, `Unwrap`, `UnwrapErr`, `UnwrapOr`, `UnwrapOrElse`, `Map`, `MapErr`, `Then`, `OrElse`, `Flatten`
+// Error can be created from strings or exceptions
+Error error1 = "Simple error message";
+Error error2 = new InvalidOperationException("Oops");
 
-### `Option<T>`
+// Access the original exception if needed
+if (error.Exception != null)
+    Console.WriteLine($"Exception: {error.Exception.Message}");
+```
 
-- **Constructors:** `Option.Some(T)`, `Option.None<T>()`, `Option.Create(T?)`
-- **Properties:** `IsSome`, `IsNone`
-- **Methods:** `Match`, `Unwrap`, `UnwrapOr`, `UnwrapOrElse`, `Map`, `Then`, `OrElse`, `Flatten`, `Filter`
+## API Overview
+
+### Result<T, TError>
+
+**Creation:**
+- `Result.Ok<T, TError>(value)` - Create successful result
+- `Result.Err<T, TError>(error)` - Create error result
+- `Result.Try(() => ...)` - Catch exceptions
+- `Result.TryAsync(async () => ...)` - Catch async exceptions
+- `Result.From(func)` - Convert function to result
+- Implicit conversions from `T` or `TError`
+
+**State checking:**
+- `IsOk` / `IsErr` - Boolean properties
+- `WhenOk(out value)` - Get value if Ok
+- `WhenErr(out error)` - Get error if Err
+
+**Extracting values:**
+- `Unwrap()` - Get value or throw
+- `UnwrapErr()` - Get error or throw
+- `UnwrapOr(default)` - Get value or default
+- `UnwrapOrElse(func)` - Get value or compute default
+- `UnwrapOrDefault()` - Get value or type default
+- `Expect(message)` - Get value or throw with message
+- `ExpectErr(message)` - Get error or throw with message
+
+**Transformations:**
+- `Map(func)` - Transform Ok value
+- `MapErr(func)` - Transform Err value
+- `AndThen(func)` - Chain to another Result
+- `OrElse(func)` - Provide alternative on error
+- `Flatten()` - Unwrap nested Results
+
+**Pattern matching:**
+- `Match(okFunc, errFunc)` - Handle both cases
+- Deconstruction: `var (value, error) = result`
+- Pattern: `result switch { (true, var val, _) => ..., ... }`
+
+**Conversions:**
+- `AsSpan()` - Convert to ReadOnlySpan
+- `AsEnumerable()` - Convert to IEnumerable
+
+### Option<T>
+
+**Creation:**
+- `Option.Some(value)` - Create Some
+- `Option.None<T>()` - Create None
+- `Option.Create(nullable)` - From nullable value
+- `Option.Try(tryGetFunc)` - From Try pattern
+- `Option.Parse<T>(string)` - Parse with IParsable (.NET 7+)
+- `Option.ParseEnum<T>(string)` - Parse enums
+- Implicit conversion from `T`
+
+**State checking:**
+- `IsSome` / `IsNone` - Boolean properties
+- `WhenSome(out value)` - Get value if Some
+
+**Extracting values:**
+- `Unwrap()` - Get value or throw
+- `UnwrapOr(default)` - Get value or default
+- `UnwrapOrElse(func)` - Get value or compute default
+
+**Transformations:**
+- `Map(func)` - Transform Some value
+- `Then(func)` - Chain to another Option
+- `OrElse(func)` - Provide alternative on None
+- `Filter(predicate)` - Keep only if predicate true
+- `Flatten()` - Unwrap nested Options
+
+**Pattern matching:**
+- `Match(someFunc, noneFunc)` - Handle both cases
+- Deconstruction: `var (isSome, value) = option` (.NET 8+)
+
+**Conversions:**
+- `AsSpan()` - Convert to ReadOnlySpan
+- `AsEnumerable()` - Convert to IEnumerable
+
+### NumericOption<T>
+
+All `Option<T>` methods plus:
+
+**Math operations:**
+- `+`, `-`, `*`, `/`, `%` - Arithmetic operators
+- `++`, `--` - Increment/decrement
+- Unary `+`, `-` - Positive/negative
+
+**Numeric functions:**
+- `Abs(value)` - Absolute value
+- `Max(x, y)` / `Min(x, y)` - Min/max values
+- `Clamp(value, min, max)` - Clamp to range
+
+**Number checks:**
+- `IsEvenInteger()` / `IsOddInteger()`
+- `IsPositive()` / `IsNegative()`
+- `IsInfinity()` / `IsNaN()` / `IsZero()`
+- And more INumber<T> methods
+
+**Parsing:**
+- `Parse(string)` - Parse with TryParse
+- Supports all numeric types implementing INumber<T>
 
 ### Extension Methods
 
-A rich set of extension methods are provided for both `Result` and `Option` to enable a fluent and expressive API. These include methods for asynchronous operations, LINQ support, and collections.
+**Option Extensions:**
+- Transform: `Map()`, `MapOr()`, `MapOrElse()`
+- Chain: `AndThen()`, `And()`, `OrElse()`, `Or()`, `Xor()`
+- Utilities: `Filter()`, `Flatten()`, `Zip()`, `ZipWith()`
+- Inspect: `Expect()`, `UnwrapOr()`, `UnwrapOrElse()`
+- Conversions: `AsOption()`, `Some()`, `None()`, `IsNoneOr()`
+- Async: `MapAsync()`, `AndThenAsync()`, `OrElseAsync()`, `MapOrElseAsync()`
 
----
+**Result Extensions:**
+- Transform: `Map()`, `MapErr()`, `MapOr()`, `MapOrElse()`
+- Chain: `AndThen()`, `And()`, `OrElse()`, `Or()`
+- Utilities: `Flatten()`, `Inspect()`, `InspectErr()`, `Contains()`, `ContainsErr()`
+- LINQ: `Select()`, `SelectMany()`, `Where()`
+- Extract: `UnwrapOr()`
+- Async: `MapAsync()`, `AndThenAsync()`, `OrElseAsync()`, `MapOrElseAsync()`
 
-## Comparison with Other Libraries
+**Collection Extensions (Option):**
+- Safe access: `FirstOrNone()`, `LastOrNone()`, `SingleOrNone()`, `ElementAtOrNone()`
+- Transform: `SelectWhere()`, `Values()`
+- Dictionary: `GetValueOrNone()`
+- Stack/Queue: `PeekOrNone()`, `PopOrNone()`, `DequeueOrNone()`
+- Immutable collections: Full support for ImmutableStack, ImmutableQueue
+- Concurrent collections: Thread-safe operations for ConcurrentBag, ConcurrentQueue, etc.
+- Set operations: `GetValueOrNone()` for HashSet, SortedSet, ImmutableHashSet, etc.
+- Sequence: `Sequence()`, `SequenceList()`, `ToList()`
+- Async: `FirstOrNoneAsync()`, `ValuesAsync()` for IAsyncEnumerable
 
-The existing comparison tables are excellent and have been preserved here.
+**Collection Extensions (Result):**
+- Extract: `Values()`, `Errors()`
+- Filter collections of results
+- Async: `ValuesAsync()`, `ErrorsAsync()` for IAsyncEnumerable
 
-### ⚖️ TL;DR — Summary
+**Interop Extensions:**
+- Option ↔ Result: `OkOr()`, `OkOrElse()`, `Ok()`, `Err()`, `Transpose()`
+- JSON support: `GetOption()`, `GetPropValue()`, `GetPropOption()` for System.Text.Json types
+- Numeric: Extensions for `NumericOption<T>` with full INumber<T> support
 
-| Feature / Library | SharpResults | FluentResults | OneOf | CSharpFunctionalExtensions |
-|------------------|----------------------|---------------|-------|-----------------------------|
-| ✅ Strong Result/Error typing | ✔️ Yes | ✔️ Yes | ❌ No | ✔️ Yes |
-| ✅ Rich extension methods | ✔️ Yes | ✔️ Partial | ❌ Minimal | ✔️ Yes |
-| ✅ Exception capturing | ✔️ Yes | ✔️ Yes | ❌ No | ✔️ Yes |
-| ✅ Pattern matching support | ✔️ With Match | ✔️ With ResultType | ✔️ Native | ❌ Manual |
-| ✅ Null safety / value handling | ✔️ Yes | ✔️ Yes | ⚠️ Riskier | ✔️ Yes |
-| ✅ Simplicity & minimalism | ✔️ Lean and clean | ❌ Heavy | ✔️ Minimal | ❌ Verbose |
-| ✅ Control over error types | ✔️ Generic errors (TError) | ✔️ Message objects | ❌ Not applicable | ✔️ Generic |
-| 🛠️ IDE-friendliness (C# tooling) | ✔️ Yes | ✔️ Yes | ⚠️ Limited | ✔️ Yes |
+**Bool Extensions:**
+- `Then<T>()` - Execute function if true, return Option
+- `ThenSome<T>()` - Create Some if true, None otherwise
+- Async: `ThenAsync()`, `ThenSomeAsync()`
 
-### Detailed Feature Comparison
+**String/Number Extensions:**
+- `Parse<T>()` - Safe parsing to Option for any INumber<T>
 
-| Feature | SharpResults | OneOf | CSharpFunctionalExtensions | FluentResults |
-|---------|-------------|-------|----------------------------|---------------|
-| Custom Error Types | ✅ | ✅ | ✅ | ✅ |
-| LINQ Support | ✅ | ❌ | ✅ | ❌ |
-| Async Support | ✅ | ❌ | ✅ | ✅ |
-| Pattern Matching | ✅ | ✅ | ❌ | ❌ |
-| Implicit Conversions | ✅ | ✅ | ✅ | ❌ |
-| Deconstruction | ✅ | ✅ | ✅ | ❌ |
-| Multiple Error Collection | ✅ | ❌ | ❌ | ✅ |
-| Zero Dependencies | ✅ | ✅ | ✅ | ✅ |
-| .NET Standard 2.0+ | ✅ | ✅ | ✅ | ✅ |
+All async extensions support both `Task<T>` and `ValueTask<T>` variants for maximum flexibility and performance.
 
----
+## Features
+
+| Feature | SharpResults | OneOf | FluentResults |
+|---------|:------------:|:-----:|:-------------:|
+| **Core Types** |
+| Result<T, TError> | ✅ | ✅ | ✅ |
+| Option<T> | ✅ | ❌ | ❌ |
+| Custom Error Types | ✅ | ✅ | ✅ |
+| Unit Type | ✅ | ❌ | ❌ |
+| NumericOption<T> | ✅ | ❌ | ❌ |
+| **Language Features** |
+| Pattern Matching | ✅ | ✅ | ❌ |
+| Deconstruction | ✅ | ✅ | ❌ |
+| Implicit Conversions | ✅ | ✅ | ❌ |
+| LINQ Query Syntax | ✅ | ❌ | ❌ |
+| **Functional Operations** |
+| Map/Then/OrElse | ✅ | ❌ | ✅ |
+| Flatten | ✅ | ❌ | ❌ |
+| Filter | ✅ | ❌ | ❌ |
+| Zip | ✅ | ❌ | ❌ |
+| **Async Support** |
+| Full Async/Await | ✅ | ❌ | ✅ |
+| ValueTask Support | ✅ | ❌ | ❌ |
+| IAsyncEnumerable | ✅ | ❌ | ❌ |
+| **Collections** |
+| Collection Extensions | ✅ | ❌ | ❌ |
+| Safe LINQ (FirstOrNone, etc) | ✅ | ❌ | ❌ |
+| Immutable Collections | ✅ | ❌ | ❌ |
+| Concurrent Collections | ✅ | ❌ | ❌ |
+| **Serialization** |
+| JSON Serialization | ✅ | ❌ | ✅ |
+| Built-in Converters | ✅ | ❌ | ✅ |
+| **Error Handling** |
+| Exception Capturing | ✅ | ❌ | ✅ |
+| Multiple Errors | ✅ | ❌ | ✅ |
+| Error Transformation | ✅ | ❌ | ✅ |
+| **Interop** |
+| Option ↔ Result | ✅ | ❌ | ❌ |
+| JSON Extensions | ✅ | ❌ | ❌ |
+| Bool Extensions | ✅ | ❌ | ❌ |
+| **Other** |
+| Zero Dependencies | ✅ | ✅ | ✅ |
+| .NET 8+ | ✅ | ✅ (.NET Standard 2.0+) | ✅ (.NET Standard 2.0+) |
+| Active Development | ✅ | ✅ | ✅ |
 
 ## Contributing
 
-Contributions are welcome! Here's how you can contribute:
+Pull requests are welcome! If you want to add a feature or fix a bug:
 
-1.  **Fork the repository**
-2.  **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3.  **Commit your changes**: `git commit -m 'Add some amazing feature'`
-4.  **Push to the branch**: `git push origin feature/amazing-feature`
-5.  **Open a Pull Request**
+1. Fork the repo
+2. Create your branch: `git checkout -b feature/cool-new-thing`
+3. Make your changes and add tests
+4. Make sure everything passes
+5. Push and open a PR
 
-### Development Guidelines
-
--   Follow the existing code style and conventions.
--   Add unit tests for new features.
--   Update documentation for any changes.
--   Ensure all tests pass before submitting a PR.
+Try to match the existing code style, and update docs if you're changing behavior.
 
 ## License
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+MIT License - do whatever you want with it. See the LICENSE file for the legal stuff.

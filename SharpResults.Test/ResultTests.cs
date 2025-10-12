@@ -74,7 +74,7 @@ public class ResultTests
         Assert.True(ok.Or(Result.Ok<int, int>(2)).IsOk);
         Assert.Equal(1, ok.Or(Result.Ok<int, int>(2)).Unwrap());
         Assert.Equal(2, err.Or(Result.Ok<int, int>(2)).Unwrap());
-        Assert.Equal(3, err.OrElse(e => Result.Ok<int, int>(3)).Unwrap());
+        Assert.Equal(3, err.OrElse(_ => Result.Ok<int, int>(3)).Unwrap());
     }
 
     [Fact]

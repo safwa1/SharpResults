@@ -29,7 +29,7 @@ public static class NumericOption
         where T : struct, INumber<T>
     {
         return value.HasValue
-            ? new(value.GetValueOrDefault())
+            ? new NumericOption<T>(value.GetValueOrDefault())
             : NumericOption<T>.None;
     }
 

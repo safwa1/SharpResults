@@ -158,8 +158,10 @@ public static class ResultExtensions
     /// <param name="self">The result.</param>
     /// <param name="thenFunc">The function to call with the <c>Ok</c> value, if any.</param>
     /// <returns>The result of calling <paramref name="thenFunc"/> if the result is <c>Ok</c>, otherwise the <c>Err</c> value of <paramref name="self"/>.</returns>
-    public static Result<T2, TErr> AndThen<T1, T2, TErr>(this Result<T1, TErr> self,
-        Func<T1, Result<T2, TErr>> thenFunc)
+    public static Result<T2, TErr> AndThen<T1, T2, TErr>(
+        this Result<T1, TErr> self,
+        Func<T1, Result<T2, TErr>> thenFunc
+    )
         where T1 : notnull
         where T2 : notnull
         where TErr : notnull
@@ -323,5 +325,32 @@ public static class ResultExtensions
             return Result<T, TErr>.Err(onFailure());
 
         return result;
+    }
+
+    public static Result<T, List<TErr>> ValidateAll<T, TErr>(
+        this T value,
+        params Func<T, Result<T, TErr>>[] validators) where T : notnull where TErr : notnull
+    {
+        var errors = new List<TErr>();
+        foreach (var validator in validators)
+        {
+            if (validator(value).WhenErr(out var err))
+                errors.Add(err!);
+        }
+
+        return errors.Count != 0
+            ? Result.Err<T, List<TErr>>(errors)
+            : Result.Ok<T, List<TErr>>(value);
+    }
+
+    public static Result<T, string> Validate<T>(
+        this T value,
+        Func<T, bool> predicate,
+        string errorMessage
+    ) where T : notnull
+    {
+        return predicate(value)
+            ? Result.Ok<T, string>(value)
+            : Result.Err<T, string>(errorMessage);
     }
 }
