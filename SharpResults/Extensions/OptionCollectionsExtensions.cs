@@ -35,11 +35,4 @@ public static class OptionCollectionsExtensions
     {
         return options.Sequence().Map(x => x.ToList());
     }
-
-    // Extract all Some values
-    public static IEnumerable<T> Values<T>(
-        this IEnumerable<Option<T>> options) where T : notnull
-    {
-        return options.Where(o => o.IsSome).Select<Option<T>, T>(o => o.Unwrap());
-    }
 }
