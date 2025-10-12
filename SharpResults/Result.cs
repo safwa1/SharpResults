@@ -118,7 +118,6 @@ public static class Result
     /// <typeparam name="T">The type of the value returned by the given function.</typeparam>
     /// <param name="func">The asynchronous function to attempt to call.</param>
     /// <returns>The return value of <paramref name="func"/> wrapped in <c>Ok</c>, or <c>Err</c> containing any exception that was thrown.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static async Task<Result<T, Exception>> TryAsync<T>(Func<Task<T>> func)
         where T : notnull
     {
@@ -136,7 +135,6 @@ public static class Result
     /// <summary>
     /// Overload for functions returning ValueTask.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static async Task<Result<T, Exception>> TryAsync<T>(Func<ValueTask<T>> func)
         where T : notnull
     {

@@ -854,7 +854,6 @@ public static class ResultAsyncExtensions
         }
     }
     
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static async Task<Result<T, Exception>> TryAsync<T>(this Task<T> task)
         where T : notnull
     {
@@ -868,8 +867,7 @@ public static class ResultAsyncExtensions
             return Result.Err<T>(ex);
         }
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    
     public static async Task<Result<T, Exception>> TryAsync<T>(this ValueTask<T> valueTask)
         where T : notnull
     {
