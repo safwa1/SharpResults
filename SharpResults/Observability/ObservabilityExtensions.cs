@@ -9,7 +9,6 @@ public static class ObservabilityExtensions
     /// </summary>
     public static Option<T> Trace<T>(
         this Option<T> option,
-        string operationName,
         Action<bool, T?>? onComplete = null)
         where T : notnull
     {
@@ -17,6 +16,18 @@ public static class ObservabilityExtensions
         onComplete?.Invoke(isSome, value);
         return option;
     }
+    
+    public static Option<T> Trace<T>(
+        this Option<T> option,
+        string operationName,
+        Action<string, bool, T?>? onComplete = null)
+        where T : notnull
+    {
+        var isSome = option.WhenSome(out var value);
+        onComplete?.Invoke(operationName, isSome, value);
+        return option;
+    }
+
 
     /// <summary>
     /// Measure execution time of Result operations
