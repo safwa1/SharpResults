@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using SharpResults.Converters;
+using SharpResults.Core;
+using SharpResults.Exceptions;
 using SharpResults.Extensions;
 using static System.ArgumentNullException;
 
@@ -135,7 +137,7 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
 
     /// <summary>
     /// Returns the contained value if the result is <c>Ok</c>. Otherwise,
-    /// throws an <see cref="System.InvalidOperationException"/>.
+    /// throws an <see cref="ResultUnwrapException"/>.
     /// <para>
     /// Note: if the <c>Err</c> is <see cref="Exception"/> it will be contained as an inner exception.
     /// Otherwise, the <c>Err</c> value will be converted to a string and included in the exception message.
@@ -148,29 +150,29 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     /// </para>
     /// </summary>
     /// <returns>The value inside the result, if the result is <c>Ok</c>.</returns>
-    /// <exception cref="System.InvalidOperationException">Thrown if the result is in the error state.</exception>
+    /// <exception cref="ResultUnwrapException">Thrown if the result is in the error state.</exception>
     public T Unwrap()
     {
         if (_isOk)
             return _value;
 
         if (_err is Exception ex)
-            throw new InvalidOperationException("Could not unwrap a Result in the Err state.", ex);
+            throw new ResultUnwrapException("Could not unwrap a Result in the Err state.", ex);
 
-        throw new InvalidOperationException($"Could not unwrap a Result in the Err state: {_err}");
+        throw new ResultUnwrapException($"Could not unwrap a Result in the Err state: {_err}");
     }
 
     /// <summary>
-    /// Returns the contained <c>Err</c> value, or throws an <see cref="System.InvalidOperationException"/>.
+    /// Returns the contained <c>Err</c> value, or throws an <see cref="ResultUnwrapErrException"/>.
     /// </summary>
     /// <returns>The contained <c>Err</c> value.</returns>
-    /// <exception cref="System.InvalidOperationException">Thrown when the result is in the <c>Ok</c> state.</exception>
+    /// <exception cref="ResultUnwrapErrException">Thrown when the result is in the <c>Ok</c> state.</exception>
     public TErr UnwrapErr()
     {
         if (!_isOk)
             return _err;
 
-        throw new InvalidOperationException($"Expected the result to be in the Err state, but it was Ok: {_value}");
+        throw new ResultUnwrapErrException($"Expected the result to be in the Err state, but it was Ok: {_value}");
     }
 
     /// <summary>
@@ -190,7 +192,7 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
 
     /// <summary>
     /// Returns the contained value if the result is <c>Ok</c>. Otherwise,
-    /// throws an <see cref="System.InvalidOperationException"/> with the given message.
+    /// throws an <see cref="ResultUnwrapException"/> with the given message.
     /// <para>
     /// Note: if the <c>Err</c> is <see cref="Exception"/> it will be contained as an inner exception.
     /// Otherwise, the <c>Err</c> value will be converted to a string and included in the exception message.
@@ -203,30 +205,30 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     /// </para>
     /// </summary>
     /// <returns>The value inside the result, if the result is <c>Ok</c>.</returns>
-    /// <exception cref="System.InvalidOperationException">Thrown if the result is in the error state.</exception>
+    /// <exception cref="ResultUnwrapException">Thrown if the result is in the error state.</exception>
     public T Expect(string message)
     {
         if (_isOk)
             return _value;
 
         if (_err is Exception ex)
-            throw new InvalidOperationException(message, ex);
+            throw new ResultUnwrapException(message, ex);
 
-        throw new InvalidOperationException($"{message} - {_err}");
+        throw new ResultUnwrapException($"{message} - {_err}");
     }
 
     /// <summary>
-    /// Returns the contained <c>Err</c> value, or throws an <see cref="System.InvalidOperationException"/>.
+    /// Returns the contained <c>Err</c> value, or throws an <see cref="ResultExpectErrException"/>.
     /// </summary>
     /// <param name="message">The message for the thrown exception, if any.</param>
     /// <returns>The contained <c>Err</c> value.</returns>
-    /// <exception cref="System.InvalidOperationException">Thrown when the result is in the <c>Ok</c> state.</exception>
+    /// <exception cref="ResultExpectErrException">Thrown when the result is in the <c>Ok</c> state.</exception>
     public TErr ExpectErr(string message)
     {
         if (!_isOk)
             return _err;
 
-        throw new InvalidOperationException($"{message} - {_value}");
+        throw new ResultExpectErrException($"{message} - {_value}");
     }
 
     /// <summary>
@@ -652,6 +654,9 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     /// <returns>The contained Err value.</returns>
     /// <exception cref="InvalidOperationException">Thrown if the result is an Ok.</exception>
     public static explicit operator TErr(Result<T, TErr> result) => result.UnwrapErr();
+    
+    [Obsolete("Using default(Result<,>) is unsafe. Use Ok(...) or Err(...) instead.", true)]
+    public static Result<T, TErr> UnsafeDefault() => default;
 }
 
 // ModuleInitializer
@@ -661,7 +666,9 @@ internal static class ResultModuleInitializer
     [ModuleInitializer]
     internal static void Init()
     {
+#if DEBUG
         Console.WriteLine("⚠️ SharpResults loaded. Always use Ok(...) or Err(...) factories; default(Result<,>) is unsafe.");
+#endif
     }
 }
 #endif
