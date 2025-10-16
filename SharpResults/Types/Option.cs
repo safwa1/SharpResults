@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using SharpResults.Converters;
+using SharpResults.Core;
 using static System.ArgumentNullException;
 
 namespace SharpResults.Types;

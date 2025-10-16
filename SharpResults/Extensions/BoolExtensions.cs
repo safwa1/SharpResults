@@ -1,4 +1,3 @@
-
 using System.Runtime.CompilerServices;
 using SharpResults.Types;
 
@@ -9,6 +8,7 @@ namespace SharpResults.Extensions;
 /// </summary>
 public static class BoolExtensions
 {
+    
     /// <summary>
     /// Executes a function if the boolean value is true and returns an option.
     /// </summary>

@@ -1,4 +1,5 @@
 using System.Numerics;
+using SharpResults.Core;
 using SharpResults.Types;
 
 namespace SharpResults.Extensions;

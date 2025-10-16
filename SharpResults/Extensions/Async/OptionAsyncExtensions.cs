@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using SharpResults.Types;
 using static System.ArgumentNullException;
-using static SharpResults.Option;
+using static SharpResults.Core.Option;
 
 namespace SharpResults.Extensions.Async;
 

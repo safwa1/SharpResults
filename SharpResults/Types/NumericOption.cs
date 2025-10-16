@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using SharpResults.Converters;
+using SharpResults.Core;
 using SharpResults.Extensions;
 using static System.ArgumentNullException;
 

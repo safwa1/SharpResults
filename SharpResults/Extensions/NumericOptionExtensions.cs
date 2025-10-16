@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using SharpResults.Types;
 using static System.ArgumentNullException;
-using static SharpResults.NumericOption;
+using static SharpResults.Core.NumericOption;
 
 namespace SharpResults.Extensions;
 
