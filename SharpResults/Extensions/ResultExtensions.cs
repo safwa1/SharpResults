@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using SharpResults.Core;
 using SharpResults.Types;
 using static System.ArgumentNullException;
 
@@ -353,4 +354,15 @@ public static class ResultExtensions
             ? Result.Ok<T, string>(value)
             : Result.Err<T, string>(errorMessage);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ResultValueEnumerable<T, TErr> AsValueEnumerable<T, TErr>(this Result<T, TErr> result)
+        where T : notnull
+        where TErr : notnull => new(result);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ResultValueEnumerable<T, TErr> AsValueEnumerable<T, TErr>(this Result<IReadOnlyList<T>, TErr> result)
+        where T : notnull
+        where TErr : notnull
+        => new(result);
 }
