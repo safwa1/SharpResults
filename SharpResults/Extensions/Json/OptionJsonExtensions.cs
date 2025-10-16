@@ -1,10 +1,11 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using SharpResults.Core;
 using SharpResults.Types;
 using static System.ArgumentNullException;
 
-namespace SharpResults.Extensions;
+namespace SharpResults.Extensions.Json;
 
 /// <summary>
 /// Extension methods for using <c>System.Text.Json</c> types with <see cref="Option{T}"/>.

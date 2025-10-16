@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using SharpResults.Exceptions;
 using SharpResults.Types;
 
-namespace SharpResults;
+namespace SharpResults.Core;
 
 /// <summary>
 /// This class contains static methods for creating a <see cref="Result{T, TErr}"/>.

@@ -1,7 +1,7 @@
 ﻿using SharpResults.Types;
 using static System.ArgumentNullException;
 
-namespace SharpResults.Extensions;
+namespace SharpResults.Extensions.Collections;
 
 /// <summary>
 /// Extension methods for working with collections involving <see cref="Result{T, TErr}"/>.

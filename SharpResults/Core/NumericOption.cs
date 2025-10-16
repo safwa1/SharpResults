@@ -1,10 +1,8 @@
-﻿#if NET7_0_OR_GREATER
-
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.CompilerServices;
 using SharpResults.Types;
 
-namespace SharpResults;
+namespace SharpResults.Core;
 
 /// <summary>
 /// This class contains static methods for creation an <see cref="Option{T}"/>.
@@ -76,7 +74,7 @@ public static class NumericOption
         where T : struct, ISpanParsable<T>, INumber<T>
     {
         return T.TryParse(s, provider, out var value)
-            ? new(value) : default;
+            ? new NumericOption<T>(value) : default;
     }
 
     /// <summary>
@@ -89,5 +87,3 @@ public static class NumericOption
     public static NumericOption<T> Parse<T>(ReadOnlySpan<char> s) where T : struct, ISpanParsable<T>, INumber<T>
         => Parse<T>(s, provider: null);
 }
-
-#endif

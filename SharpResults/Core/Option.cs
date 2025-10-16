@@ -4,7 +4,7 @@ using SharpResults.Extensions;
 using SharpResults.Types;
 using static System.ArgumentNullException;
 
-namespace SharpResults;
+namespace SharpResults.Core;
 
 /// <summary>
 /// This class contains static methods for creation an <see cref="Option{T}"/>.
@@ -26,7 +26,8 @@ public static class Option
     /// <param name="value">The value to wrap in a <c>Some</c> option.</param>
     /// <returns>The given value, wrapped in a <c>Some</c> option.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Option<T> Create<T>(T? value) where T : class => new(value!);
+    public static Option<T> Create<T>(T? value) 
+        where T : class => new(value!);
 
     /// <summary>
     /// Returns a <c>Some</c> option for the specified <paramref name="value"/> is it is not null, otherwise <c>None</c>.
@@ -37,7 +38,7 @@ public static class Option
     public static Option<T> Create<T>(T? value)
         where T : struct
     {
-        return value.HasValue ? new(value.GetValueOrDefault()) : default;
+        return value.HasValue ? new Option<T>(value.GetValueOrDefault()) : default;
     }
 
     /// <summary>

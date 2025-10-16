@@ -1,4 +1,4 @@
-namespace SharpResults.Types;
+namespace SharpResults.Core;
 
 public sealed record Error(string? Value)
 {

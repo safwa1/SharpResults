@@ -1,6 +1,7 @@
+using SharpResults.Core;
 using SharpResults.Types;
 
-namespace SharpResults.Extensions;
+namespace SharpResults.Extensions.Linq;
 
 public static class OptionLinqExtensions
 {

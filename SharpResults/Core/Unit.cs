@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using SharpResults.Converters;
+using SharpResults.Types;
 
-namespace SharpResults.Types;
+namespace SharpResults.Core;
 
 /// <summary>
 /// A unit type is a type that allows only one value and holds no information. It can be used
