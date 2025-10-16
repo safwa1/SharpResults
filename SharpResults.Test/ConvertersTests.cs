@@ -1,4 +1,5 @@
 using System.Text.Json;
+using SharpResults.Core;
 using SharpResults.Types;
 
 namespace SharpResults.Test;

@@ -1,3 +1,4 @@
+using SharpResults.Core;
 using SharpResults.Extensions;
 
 namespace SharpResults.Test;

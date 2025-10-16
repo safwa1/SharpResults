@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using SharpResults.Extensions;
+using SharpResults.Extensions.Json;
 
 namespace SharpResults.Test;
 

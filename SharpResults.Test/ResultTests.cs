@@ -1,9 +1,20 @@
+using SharpResults.Core;
+using SharpResults.Exceptions;
 using SharpResults.Extensions;
+using SharpResults.Types;
+using Xunit.Abstractions;
 
 namespace SharpResults.Test;
 
 public class ResultTests
 {
+    private readonly ITestOutputHelper _testOutputHelper;
+
+    public ResultTests(ITestOutputHelper testOutputHelper)
+    {
+        _testOutputHelper = testOutputHelper;
+    }
+
     [Fact]
     public void Ok_ContainsValue()
     {
@@ -105,8 +116,8 @@ public class ResultTests
         var err = Result.Err<int, string>("fail");
         Assert.Equal(5, ok.Expect("should not throw"));
         Assert.Equal("fail", err.ExpectErr("should not throw"));
-        Assert.Throws<InvalidOperationException>(() => err.Expect("fail"));
-        Assert.Throws<InvalidOperationException>(() => ok.ExpectErr("fail"));
+        Assert.Throws<ResultUnwrapException>(() => err.Expect("fail"));
+        Assert.Throws<ResultExpectErrException>(() => ok.ExpectErr("fail"));
     }
 
     [Fact]
@@ -120,5 +131,216 @@ public class ResultTests
         Assert.Empty(err.AsEnumerable());
         Assert.Equal(1, ok.AsSpan().Length);
         Assert.Equal(0, err.AsSpan().Length);
+    }
+    
+    // =======================
+    
+      [Fact]
+    public void AsValueEnumerable_ForSingleOk_ShouldYieldSingleValue()
+    {
+        // Arrange
+        var result = Result<int, string>.Ok(42);
+        var enumerable = result.AsValueEnumerable();
+
+        // Act
+        var list = new List<int>();
+        foreach (var item in enumerable)
+        {
+            list.Add(item);
+        }
+
+        // Assert
+        Assert.Single(list);
+        Assert.Equal(42, list[0]);
+    }
+
+    [Fact]
+    public void AsValueEnumerable_ForSingleErr_ShouldYieldNothing()
+    {
+        // Arrange
+        var result = Result<int, string>.Err("failed");
+        var enumerable = result.AsValueEnumerable();
+
+        // Act
+        var list = new List<int>();
+        foreach (var item in enumerable)
+        {
+            list.Add(item);
+        }
+
+        // Assert
+        Assert.Empty(list);
+    }
+
+    [Fact]
+    public void TryGetNext_ForSingleOk_ShouldReturnTrueThenFalse()
+    {
+        // Arrange
+        var result = Result<int, string>.Ok(99);
+        var enumerator = result.AsValueEnumerable().GetEnumerator();
+
+        // Act & Assert
+        Assert.True(enumerator.TryGetNext(out var item1));
+        Assert.Equal(99, item1);
+
+        Assert.False(enumerator.TryGetNext(out _));
+    }
+
+    [Fact]
+    public void TryGetNext_ForSingleErr_ShouldReturnFalseImmediately()
+    {
+        // Arrange
+        var result = Result<int, string>.Err("error");
+        var enumerator = result.AsValueEnumerable().GetEnumerator();
+
+        // Act & Assert
+        Assert.False(enumerator.TryGetNext(out _));
+    }
+    
+
+    [Fact]
+    public void TryGetSpan_ForSingleErr_ShouldReturnFalse()
+    {
+        // Arrange
+        var result = Result<int, string>.Err("error");
+        var enumerator = result.AsValueEnumerable().GetEnumerator();
+
+        // Act
+        var success = enumerator.TryGetSpan(out var span);
+
+        // Assert
+        Assert.False(success);
+        Assert.True(span.IsEmpty);
+    }
+    
+    [Fact]
+    public void AsValueEnumerable_ForCollectionOk_ShouldYieldAllValues()
+    {
+        // Arrange
+        var list = new List<int> { 1, 2, 3 };
+        var result = Result<IReadOnlyList<int>, string>.Ok(list);
+        var enumerable = result.AsValueEnumerable();
+
+        // Act
+        var yielded = new List<int>();
+        foreach (var item in enumerable)
+        {
+            yielded.Add(item);
+        }
+
+        // Assert
+        Assert.Equal(list, yielded);
+    }
+
+    [Fact]
+    public void AsValueEnumerable_ForCollectionErr_ShouldYieldNothing()
+    {
+        // Arrange
+        var result = Result<IReadOnlyList<int>, string>.Err("collection error");
+        var enumerable = result.AsValueEnumerable();
+
+        // Act
+        var list = new List<int>();
+        foreach (var item in enumerable)
+        {
+            list.Add(item);
+        }
+
+        // Assert
+        Assert.Empty(list);
+    }
+
+    [Fact]
+    public void TryGetNext_ForCollectionOk_ShouldYieldAllValues()
+    {
+        // Arrange
+        var list = new List<int> { 10, 20 };
+        var result = Result<IReadOnlyList<int>, string>.Ok(list);
+        var enumerator = result.AsValueEnumerable().GetEnumerator();
+
+        // Act & Assert
+        Assert.True(enumerator.TryGetNext(out var item1));
+        Assert.Equal(10, item1);
+
+        Assert.True(enumerator.TryGetNext(out var item2));
+        Assert.Equal(20, item2);
+
+        Assert.False(enumerator.TryGetNext(out _));
+    }
+
+    [Fact]
+    public void TryGetSpan_ForCollection_ShouldAlwaysReturnFalse()
+    {
+        // Arrange
+        var result = Result<IReadOnlyList<int>, string>.Ok(new List<int> { 1, 2 });
+        var enumerator = result.AsValueEnumerable().GetEnumerator();
+
+        // Act
+        var success = enumerator.TryGetSpan(out var span);
+
+        // Assert
+        Assert.False(success);
+        Assert.True(span.IsEmpty);
+    }
+    
+    [Fact]
+    public void Current_BeforeMoveNext_ShouldThrow()
+    {
+        // Arrange
+        var result = Result<int, string>.Ok(1);
+        var enumerator = result.AsValueEnumerable().GetEnumerator();
+
+        // Act & Assert
+        Exception? thrownException = null;
+        try
+        {
+            var current = enumerator.Current;
+        }
+        catch (Exception ex)
+        {
+            thrownException = ex;
+        }
+        
+        Assert.IsType<InvalidOperationException>(thrownException);
+    }
+    
+
+    [Fact]
+    public void TryGetSpan_AfterTryGetNext_ShouldReturnFalse()
+    {
+        // Arrange
+        var result = Result<int, string>.Ok(55);
+        var enumerator = result.AsValueEnumerable().GetEnumerator();
+        enumerator.TryGetNext(out _); // Consume the item
+
+        // Act
+        var success = enumerator.TryGetSpan(out var span);
+
+        // Assert
+        Assert.False(success);
+        Assert.True(span.IsEmpty);
+    }
+    
+    
+    [Theory]
+    [InlineData(0)]
+    [InlineData(5)]
+    public void AsValueEnumerable_ForCollectionOk_ShouldHandleDifferentListSizes(int size)
+    {
+        // Arrange
+        var list = Enumerable.Range(0, size).ToList();
+        var result = Result<IReadOnlyList<int>, string>.Ok(list);
+        var enumerable = result.AsValueEnumerable();
+
+        // Act
+        var yielded = new List<int>();
+        foreach (var item in enumerable)
+        {
+            yielded.Add(item);
+        }
+
+        // Assert
+        Assert.Equal(size, yielded.Count);
+        Assert.Equal(list, yielded);
     }
 }

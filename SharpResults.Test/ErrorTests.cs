@@ -1,4 +1,4 @@
-using SharpResults.Types;
+using SharpResults.Core;
 
 namespace SharpResults.Test;
 
