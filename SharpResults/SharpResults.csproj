@@ -8,8 +8,8 @@
         <NoWarn>1591</NoWarn>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageId>SharpResults</PackageId>
-        <Version>0.4.3</Version>
-        <ReleaseVersion>0.4.3</ReleaseVersion>
+        <Version>0.4.4</Version>
+        <ReleaseVersion>0.4.4</ReleaseVersion>
         <LangVersion>preview</LangVersion>
         <Authors>Safwan Abdulghani</Authors>
         <Company>Safwan.pro</Company>
@@ -28,6 +28,10 @@
     
     <ItemGroup>
         <None Include="..\README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <ProjectReference Include="..\SharpResults.Generators\SharpResults.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
     
 </Project>
