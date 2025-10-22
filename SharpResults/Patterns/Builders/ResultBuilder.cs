@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using SharpResults.Core;
 using SharpResults.Types;
 using static System.ArgumentNullException;
@@ -9,19 +10,20 @@ namespace SharpResults.Patterns.Builders;
 /// through a pipeline without async I/O.
 /// </summary>
 /// <typeparam name="T">The type being validated and transformed.</typeparam>
-public class ResultBuilder<T> where T : notnull
+/// <typeparam name="TErr"></typeparam>
+public class ResultBuilder<T, TErr> where T : notnull where TErr : notnull
 {
-    private readonly List<Func<T, Result<T, string>>> _steps = new();
+    private ImmutableArray<Func<T, Result<T, TErr>>> _steps = ImmutableArray<Func<T, Result<T, TErr>>>.Empty;
 
     /// <summary>
     /// Adds a synchronous validation/transformation step to the pipeline.
     /// </summary>
     /// <param name="step">The function that validates or transforms the object.</param>
     /// <returns>The builder for method chaining.</returns>
-    public ResultBuilder<T> With(Func<T, Result<T, string>> step)
+    public ResultBuilder<T, TErr> With(Func<T, Result<T, TErr>> step)
     {
         ThrowIfNull(step);
-        _steps.Add(step);
+        _steps = _steps.Add(step);
         return this;
     }
 
@@ -29,11 +31,11 @@ public class ResultBuilder<T> where T : notnull
     /// Executes all steps and returns the transformed object or all collected errors.
     /// </summary>
     /// <param name="initial">Initial object to validate and transform.</param>
-    public Result<T, IReadOnlyList<string>> Build(T initial)
+    public Result<T, IReadOnlyList<TErr>> Build(T initial)
     {
         ThrowIfNull(initial);
 
-        var errors = new List<string>();
+        var errors = new List<TErr>();
         var current = initial;
 
         foreach (var step in _steps)
@@ -51,15 +53,15 @@ public class ResultBuilder<T> where T : notnull
         }
 
         return errors.Count == 0
-            ? Result.Ok<T, IReadOnlyList<string>>(current)
-            : Result.Err<T, IReadOnlyList<string>>(errors);
+            ? Result.Ok<T, IReadOnlyList<TErr>>(current)
+            : Result.Err<T, IReadOnlyList<TErr>>(errors);
     }
 
     /// <summary>
     /// Executes all steps but stops at the first error (fail-fast).
     /// </summary>
     /// <param name="initial">Initial object to validate and transform.</param>
-    public Result<T, string> BuildFastFail(T initial)
+    public Result<T, TErr> BuildFastFail(T initial)
     {
         ThrowIfNull(initial);
 
@@ -70,34 +72,11 @@ public class ResultBuilder<T> where T : notnull
             var result = step(current);
 
             if (result.IsErr)
-                return Result.Err<T, string>(result.UnwrapErr());
+                return Result.Err<T, TErr>(result.UnwrapErr());
 
             current = result.Unwrap();
         }
 
-        return Result.Ok<T, string>(current);
+        return Result.Ok<T, TErr>(current);
     }
 }
-
-/*
-public class ResultBuilder<TErr> where TErr : notnull
-{
-    public ResultAwaiter<T, TErr> GetAwaiter<T>(Result<T, TErr> result) where T : notnull
-        => new(result);
-
-    public class ResultAwaiter<T, TErr> : INotifyCompletion
-        where T : notnull
-        where TErr : notnull
-    {
-        private readonly Result<T, TErr> _result;
-
-        public ResultAwaiter(Result<T, TErr> result) => _result = result;
-
-        public bool IsCompleted => true;
-
-        public T GetResult() => _result.Unwrap();
-
-        public void OnCompleted(Action continuation) => continuation();
-    }
-}
-*/
