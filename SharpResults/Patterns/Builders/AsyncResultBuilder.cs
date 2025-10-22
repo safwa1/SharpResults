@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using SharpResults.Core;
 using SharpResults.Types;
 using static System.ArgumentNullException;
@@ -9,19 +10,20 @@ namespace SharpResults.Patterns.Builders;
 /// through a pipeline that involves I/O operations (database, API, etc.).
 /// </summary>
 /// <typeparam name="T">The type being validated and transformed.</typeparam>
-public class AsyncResultBuilder<T> where T : notnull
+/// <typeparam name="TErr"></typeparam>
+public class AsyncResultBuilder<T, TErr> where T : notnull where TErr : notnull
 {
-    private readonly List<Func<T, Task<Result<T, string>>>> _steps = new();
+    private ImmutableArray<Func<T, Task<Result<T, TErr>>>> _steps = ImmutableArray<Func<T, Task<Result<T, TErr>>>>.Empty;
 
     /// <summary>
     /// Adds an async validation/transformation step to the pipeline.
     /// </summary>
     /// <param name="step">The async function that validates or transforms the object.</param>
     /// <returns>The builder for method chaining.</returns>
-    public AsyncResultBuilder<T> With(Func<T, Task<Result<T, string>>> step)
+    public AsyncResultBuilder<T, TErr> With(Func<T, Task<Result<T, TErr>>> step)
     {
         ThrowIfNull(step);
-        _steps.Add(step);
+        _steps = _steps.Add(step);
         return this;
     }
 
@@ -30,10 +32,10 @@ public class AsyncResultBuilder<T> where T : notnull
     /// </summary>
     /// <param name="step">The synchronous function that validates or transforms the object.</param>
     /// <returns>The builder for method chaining.</returns>
-    public AsyncResultBuilder<T> With(Func<T, Result<T, string>> step)
+    public AsyncResultBuilder<T, TErr> With(Func<T, Result<T, TErr>> step)
     {
         ThrowIfNull(step);
-        _steps.Add(obj => Task.FromResult(step(obj)));
+        _steps = _steps.Add(obj => Task.FromResult(step(obj)));
         return this;
     }
 
@@ -46,11 +48,11 @@ public class AsyncResultBuilder<T> where T : notnull
     /// A Result containing either the successfully transformed object or 
     /// a list of all validation errors encountered.
     /// </returns>
-    public async Task<Result<T, IReadOnlyList<string>>> BuildAsync(T initial)
+    public async Task<Result<T, IReadOnlyList<TErr>>> BuildAsync(T initial)
     {
         ThrowIfNull(initial);
 
-        var errors = new List<string>();
+        var errors = new List<TErr>();
         var current = initial;
 
         foreach (var step in _steps)
@@ -68,8 +70,8 @@ public class AsyncResultBuilder<T> where T : notnull
         }
 
         return errors.Count == 0
-            ? Result.Ok<T, IReadOnlyList<string>>(current)
-            : Result.Err<T, IReadOnlyList<string>>(errors);
+            ? Result.Ok<T, IReadOnlyList<TErr>>(current)
+            : Result.Err<T, IReadOnlyList<TErr>>(errors);
     }
 
     /// <summary>
@@ -80,7 +82,7 @@ public class AsyncResultBuilder<T> where T : notnull
     /// <returns>
     /// A Result containing either the successfully transformed object or the first error.
     /// </returns>
-    public async Task<Result<T, string>> BuildFastFailAsync(T initial)
+    public async Task<Result<T, TErr>> BuildFastFailAsync(T initial)
     {
         ThrowIfNull(initial);
 
@@ -92,12 +94,12 @@ public class AsyncResultBuilder<T> where T : notnull
             
             if (result.IsErr)
             {
-                return Result.Err<T, string>(result.UnwrapErr());
+                return Result.Err<T, TErr>(result.UnwrapErr());
             }
             
             current = result.Unwrap();
         }
 
-        return Result.Ok<T, string>(current);
+        return Result.Ok<T, TErr>(current);
     }
 }

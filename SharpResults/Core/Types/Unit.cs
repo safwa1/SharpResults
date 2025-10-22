@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using SharpResults.Converters;
 using SharpResults.Types;
 
-namespace SharpResults.Core;
+namespace SharpResults.Core.Types;
 
 /// <summary>
 /// A unit type is a type that allows only one value and holds no information. It can be used
@@ -22,7 +22,7 @@ public readonly struct Unit : IEquatable<Unit>, IComparable<Unit>, ISpanFormatta
     /// <summary>
     /// Returns the <c>Unit</c> instance.
     /// </summary>
-    public static readonly Unit Default;
+    public static readonly Unit Default = default;
 
     /// <inheritdoc />
     public int CompareTo(Unit other) => 0;
