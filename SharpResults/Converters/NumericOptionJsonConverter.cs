@@ -1,6 +1,4 @@
-﻿#if NET7_0_OR_GREATER
-
-using System.Numerics;
+﻿using System.Numerics;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -80,5 +78,3 @@ internal sealed class NumericOptionJsonConverter : JsonConverterFactory
         }
     }
 }
-
-#endif

@@ -78,6 +78,8 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     }
     
     public bool IsOk => _isOk;
+    
+    public bool IsErr => !_isOk;
 
     /// <summary>
     /// Returnd <c>true</c> if the result is in the <c>Err</c> state, and <paramref name="error"/> will contain the error value.
@@ -96,8 +98,6 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
         error = _err;
         return !_isOk;
     }
-
-    public bool IsErr => !_isOk;
 
     /// <summary>
     /// Returns the result of executing the <paramref name="ok"/>
@@ -144,7 +144,7 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     /// </para>
     /// <para>
     /// Because this function may throw an exception, its use is generally discouraged.
-    /// Instead, prefer to use <see cref="Match{T2}(x,x)"/> and handle the Err case explicitly,
+    /// Instead, prefer to use <see cref="Match{T2}"/> and handle the Err case explicitly.
     /// or call <see cref="ResultExtensions.UnwrapOr{T,TErr}"/> or
     /// <see cref="UnwrapOrElse(Func{TErr, T})"/>.
     /// </para>
@@ -199,7 +199,7 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     /// </para>
     /// <para>
     /// Because this function may throw an exception, its use is generally discouraged.
-    /// Instead, prefer to use <see cref="Match{T2}(Func{T, T2}, Func{TErr, T2})"/> and handle the Err case explicitly,
+    /// Instead, prefer to use <see cref="Match{T2}"/> and handle the Err case explicitly,
     /// or call <see cref="ResultExtensions.UnwrapOr{T, TErr}(Result{T, TErr}, T)"/> or
     /// <see cref="UnwrapOrElse(Func{TErr, T})"/>.
     /// </para>
@@ -342,8 +342,8 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
         }
 
         return _isOk
-            ? string.Format(formatProvider, "Ok({0:" + format + "})", _value)
-            : string.Format(formatProvider, "Err({0:" + format + "})", _err);
+            ? string.Format(formatProvider, $"Ok({{0:{format}}})", _value)
+            : string.Format(formatProvider, $"Err({{0:{format}}})", _err);
     }
 
     /// <summary>
@@ -659,11 +659,13 @@ public readonly struct Result<T, TErr> : IEquatable<Result<T, TErr>>, IComparabl
     public static Result<T, TErr> UnsafeDefault() => default;
 }
 
-// ModuleInitializer
+
 #if NET8_0_OR_GREATER
 internal static class ResultModuleInitializer
 {
+#pragma warning disable CA2255 // Valid use for library initialization
     [ModuleInitializer]
+#pragma warning restore CA2255
     internal static void Init()
     {
 #if DEBUG

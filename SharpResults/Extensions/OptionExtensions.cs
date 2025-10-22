@@ -271,7 +271,7 @@ public static class OptionExtensions
     public static Option<T> AsOption<T>(this T? value)
         where T : class
     {
-        return Option.Create(value);
+        return Option.OptionOf(value);
     }
 
     /// <summary>
@@ -285,7 +285,7 @@ public static class OptionExtensions
     public static Option<T> AsOption<T>(this T? value)
         where T : struct
     {
-        return Option.Create(value);
+        return Option.OptionOf(value);
     }
 
     /// <summary>

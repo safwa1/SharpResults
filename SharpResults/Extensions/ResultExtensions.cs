@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using SharpResults.Core;
+using SharpResults.Core.Types;
 using SharpResults.Types;
 using static System.ArgumentNullException;
 
@@ -30,6 +31,29 @@ public static class ResultExtensions
             ok: x => new Result<T2, TErr>(mapper(x)),
             err: Result.Err<T2, TErr>
         );
+    }
+    
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Result<T2, ResultError> MapSafe<T1, T2>(this Result<T1, ResultError> self, Func<T1, T2> mapper)
+        where T1 : notnull
+        where T2 : notnull
+    {
+        if(self.IsErr) 
+            return Result.Err<T2>(self.UnwrapErr());
+        
+        try
+        {
+            return self.Match(
+                ok: x => new Result<T2, ResultError>(mapper(x)),
+                err: Result.Err<T2, ResultError>
+            );
+
+        }
+        catch (Exception ex)
+        {
+            return Result.Err<T2>(ex);
+        }
     }
 
     /// <summary>
@@ -246,6 +270,7 @@ public static class ResultExtensions
         return self;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Result<T, TErr> InspectErr<T, TErr>(this Result<T, TErr> self, Action<TErr> action)
         where T : notnull where TErr : notnull
     {
@@ -262,6 +287,7 @@ public static class ResultExtensions
     /// </summary>
     /// <param name="result">The result to check.</param>
     /// <param name="value">The value to compare against the result.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Contains<T, TErr>(this Result<T, TErr> result, T value) where T : notnull where TErr : notnull
     {
         return result.IsOk && EqualityComparer<T>.Default.Equals(result.Unwrap(), value);
@@ -272,6 +298,7 @@ public static class ResultExtensions
     /// </summary>
     /// <param name="result">The result to check.</param>
     /// <param name="exception">The exception to compare against the result.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool ContainsErr<T>(this Result<T, Exception> result, Exception exception) where T : notnull
     {
         return result.IsErr && result.UnwrapErr() == exception;
@@ -344,16 +371,16 @@ public static class ResultExtensions
             : Result.Ok<T, List<TErr>>(value);
     }
 
-    public static Result<T, string> Validate<T>(
-        this T value,
-        Func<T, bool> predicate,
-        string errorMessage
-    ) where T : notnull
-    {
-        return predicate(value)
-            ? Result.Ok<T, string>(value)
-            : Result.Err<T, string>(errorMessage);
-    }
+    // public static Result<T, string> Validate<T>(
+    //     this T value,
+    //     Func<T, bool> predicate,
+    //     string errorMessage
+    // ) where T : notnull
+    // {
+    //     return predicate(value)
+    //         ? Result.Ok<T, string>(value)
+    //         : Result.Err<T, string>(errorMessage);
+    // }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ResultValueEnumerable<T, TErr> AsValueEnumerable<T, TErr>(this Result<T, TErr> result)
@@ -365,4 +392,31 @@ public static class ResultExtensions
         where T : notnull
         where TErr : notnull
         => new(result);
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Result<T, TErr> ToResult<T, TErr>(this T value) where T : notnull where TErr : notnull
+        => Result.Ok<T, TErr>(value);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Result<T, string> ToResult<T>(this T value) where T : notnull
+        => Result.Ok<T, string>(value);
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Result<T, TErr> ToErr<T, TErr>(this TErr value) where T : notnull where TErr : notnull
+        => Result.Err<T, TErr>(value);
+    
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Result<T, string> ToErr<T>(this string value) where T : notnull
+        => Result.Err<T>(value);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Result<T, ResultError> ToErr<T>(this ResultError value) where T : notnull
+        => Result.Err<T>(value);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Result<T, ResultError> ToErr<T>(this Exception value) where T : notnull
+        => Result.Err<T>(value);
 }

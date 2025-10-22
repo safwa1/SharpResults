@@ -1,5 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using SharpResults.Core;
+using SharpResults.Core.Types;
 using SharpResults.Types;
 using static System.ArgumentNullException;
 
@@ -31,7 +32,7 @@ public static class ResultAsyncExtensions
         if (self.WhenOk(out var value))
         {
             var mapped = await mapper(value).ConfigureAwait(false);
-            return new(mapped);
+            return new Result<T2, TErr>(mapped);
         }
 
         return Result.Err<T2, TErr>(self.UnwrapErr());
@@ -855,13 +856,13 @@ public static class ResultAsyncExtensions
         }
     }
     
-    public static async Task<Result<T, Exception>> TryAsync<T>(this Task<T> task)
+    public static async Task<Result<T, ResultError>> ToResult<T>(this Task<T> task)
         where T : notnull
     {
         try
         {
             var value = await task.ConfigureAwait(false);
-            return Result.Ok<T, Exception>(value);
+            return Result.Ok<T, ResultError>(value);
         }
         catch (Exception ex)
         {
@@ -869,13 +870,13 @@ public static class ResultAsyncExtensions
         }
     }
     
-    public static async Task<Result<T, Exception>> TryAsync<T>(this ValueTask<T> valueTask)
+    public static async Task<Result<T, ResultError>> ToResult<T>(this ValueTask<T> valueTask)
         where T : notnull
     {
         try
         {
             var value = await valueTask.ConfigureAwait(false);
-            return Result.Ok<T, Exception>(value);
+            return Result.Ok<T, ResultError>(value);
         }
         catch (Exception ex)
         {

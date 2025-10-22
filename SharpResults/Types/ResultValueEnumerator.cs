@@ -13,7 +13,7 @@ namespace SharpResults.Types;
 /// This struct supports enumeration over both:
 /// <list type="bullet">
 /// <item><description>A single successful <see cref="Result{T,TErr}"/> value.</description></item>
-/// <item><description>A <see cref="Result{IReadOnlyList{T},TErr}"/> representing a collection of values.</description></item>
+/// <item><description>A <see cref="Result{T, TErr}"/> where T is <see cref="IReadOnlyList{T}"/> representing a collection of values.</description></item>
 /// </list>
 /// It is designed for high-performance, stack-only iteration without heap allocation.
 /// </remarks>

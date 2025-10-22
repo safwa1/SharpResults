@@ -49,9 +49,7 @@ public static class OptionResultExtensions
             ? new Result<T, TErr>(value) 
             : new Result<T, TErr>(errorFactory());
     }
-
-#if NET7_0_OR_GREATER
-
+    
     /// <summary>
     /// Transforms the <see cref="NumericOption{T}"/> into a <see cref="Result{T,TErr}"/>,
     /// mapping <c>Some</c> to <c>Ok</c> and <c>None</c> to <c>Err</c> using the provided
@@ -90,8 +88,6 @@ public static class OptionResultExtensions
         return self.IsSome(out var value)
             ? new(value) : new(errorFactory());
     }
-
-#endif
 
     /// <summary>
     /// Transposes an <c>Option</c> of a <c>Result</c> into a <c>Result</c> of an <c>Option</c>.
@@ -151,8 +147,6 @@ public static class OptionResultExtensions
             : default;
     }
 
-#if NET7_0_OR_GREATER
-
     /// <summary>
     /// Converts from the <c>Ok</c> state of <see cref="Result{T, TErr}"/> to <see cref="NumericOption{T}"/>.
     /// </summary>
@@ -168,8 +162,6 @@ public static class OptionResultExtensions
             ? NumericOption.Some(value)
             : default;
     }
-
-#endif
 
     /// <summary>
     /// Transposes a <c>Result</c> of an <c>Option</c> into an <c>Option</c> of a <c>Result</c>.

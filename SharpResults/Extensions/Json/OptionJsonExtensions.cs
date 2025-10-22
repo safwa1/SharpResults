@@ -76,7 +76,6 @@ public static class OptionJsonExtensions
     /// <returns><c>Some(JsonElement)</c> if the property was found, otherwise <c>None</c>.</returns>
     public static Option<JsonElement> GetPropOption(this JsonElement self, string propertyName)
     {
-        ThrowIfNull(self);
         return self.TryGetProperty(propertyName, out var value)
             ? Option.Some(value)
             : default;
@@ -90,7 +89,6 @@ public static class OptionJsonExtensions
     /// <returns><c>Some(JsonElement)</c> if the property was found, otherwise <c>None</c>.</returns>
     public static Option<JsonElement> GetPropOption(this JsonElement self, ReadOnlySpan<char> propertyName)
     {
-        ThrowIfNull(self);
         return self.TryGetProperty(propertyName, out var value)
             ? Option.Some(value)
             : default;
@@ -104,7 +102,6 @@ public static class OptionJsonExtensions
     /// <returns><c>Some(JsonElement)</c> if the property was found, otherwise <c>None</c>.</returns>
     public static Option<JsonElement> GetPropOption(this JsonElement self, ReadOnlySpan<byte> propertyName)
     {
-        ThrowIfNull(self);
         return self.TryGetProperty(propertyName, out var value)
             ? Option.Some(value)
             : default;

@@ -1,5 +1,3 @@
-using System.Runtime.Serialization;
-
 namespace SharpResults.Exceptions;
 
 [Serializable]
@@ -14,10 +12,6 @@ public sealed class ResultUnwrapErrException : Exception
     }
 
     public ResultUnwrapErrException(string message, Exception innerException) : base(message, innerException)
-    {
-    }
-
-    private ResultUnwrapErrException(SerializationInfo info, StreamingContext context) : base(info, context)
     {
     }
 }

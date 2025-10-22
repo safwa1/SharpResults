@@ -1,3 +1,5 @@
+using SharpResults.Core;
+using SharpResults.Core.Types;
 using SharpResults.Types;
 
 namespace SharpResults.Functional.Effects;
@@ -7,5 +9,5 @@ namespace SharpResults.Functional.Effects;
 /// </summary>
 public abstract class Effect<T> where T : notnull
 {
-    public abstract Task<Result<T, Exception>> Run();
+    public abstract Task<Result<T, ResultError>> Run();
 }
