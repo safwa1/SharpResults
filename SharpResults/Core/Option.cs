@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using SharpResults.Core.Attributes;
+using SharpResults.Core.Delegates;
 using SharpResults.Extensions;
 using SharpResults.Types;
 using static System.ArgumentNullException;
@@ -10,6 +12,7 @@ namespace SharpResults.Core;
 /// This class contains static methods for creation an <see cref="Option{T}"/>.
 /// </summary>
 [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "Not concerned with Visual Basic.")]
+[PreludeExport]
 public static class Option
 {
     /// <summary>
@@ -26,8 +29,7 @@ public static class Option
     /// <param name="value">The value to wrap in a <c>Some</c> option.</param>
     /// <returns>The given value, wrapped in a <c>Some</c> option.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Option<T> Create<T>(T? value) 
-        where T : class => new(value!);
+    public static Option<T> OptionOf<T>(T? value) where T : class => new(value!);
 
     /// <summary>
     /// Returns a <c>Some</c> option for the specified <paramref name="value"/> is it is not null, otherwise <c>None</c>.
@@ -35,8 +37,7 @@ public static class Option
     /// <param name="value">The value to wrap in a <c>Some</c> option.</param>
     /// <returns>The given value, wrapped in a <c>Some</c> option.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Option<T> Create<T>(T? value)
-        where T : struct
+    public static Option<T> OptionOf<T>(T? value) where T : struct
     {
         return value.HasValue ? new Option<T>(value.GetValueOrDefault()) : default;
     }
@@ -173,21 +174,3 @@ public static class Option
         return Enum.TryParse<T>(value, ignoreCase, out var parsed).ThenSome(parsed);
     }
 }
-
-/// <summary>
-/// Delegate that represents a fallible attempt to get a value of a given type.
-/// </summary>
-/// <typeparam name="T">The type of value to get.</typeparam>
-/// <param name="value">The value retrieved, if any.</param>
-/// <returns><c>true</c> if the value was retrieved, otherwise <c>false</c>.</returns>
-public delegate bool TryGet<T>([MaybeNullWhen(false)] out T? value);
-
-/// <summary>
-/// Delegate that represents a fallible attempt to get a value associated with a given key.
-/// </summary>
-/// <typeparam name="TKey">The type of the key.</typeparam>
-/// <typeparam name="TValue">The type of value to get.</typeparam>
-/// <param name="key">The key to retrieve the corresponding value for.</param>
-/// <param name="value">The value retrieved, if any.</param>
-/// <returns><c>true</c> if the value was retrieved, otherwise <c>false</c>.</returns>
-public delegate bool TryGetValue<in TKey, TValue>(TKey key, [MaybeNullWhen(false)] out TValue? value);

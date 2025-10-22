@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using System.Runtime.CompilerServices;
+using SharpResults.Core.Attributes;
 using SharpResults.Types;
 
 namespace SharpResults.Core;
@@ -7,6 +8,7 @@ namespace SharpResults.Core;
 /// <summary>
 /// This class contains static methods for creation an <see cref="Option{T}"/>.
 /// </summary>
+[PreludeExport]
 public static class NumericOption
 {
     /// <summary>
@@ -15,6 +17,7 @@ public static class NumericOption
     /// <param name="value">The value to wrap in a <c>Some</c> option.</param>
     /// <returns>The given value, wrapped in a <c>Some</c> option.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PreludeExport("NumericSome")]
     public static NumericOption<T> Some<T>(T value) where T : struct, INumber<T> => new(value);
 
     /// <summary>
@@ -23,6 +26,7 @@ public static class NumericOption
     /// <param name="value">The value to wrap in a <c>Some</c> option.</param>
     /// <returns>The given value, wrapped in a <c>Some</c> option.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PreludeExport("NumericOptionOf")]
     public static NumericOption<T> Create<T>(T? value)
         where T : struct, INumber<T>
     {
@@ -35,6 +39,7 @@ public static class NumericOption
     /// Returns the <c>None</c> option for the specified <typeparamref name="T"/>.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PreludeExport("NumericNone")]
     public static NumericOption<T> None<T>() where T : struct, INumber<T> => default;
 
     /// <summary>
@@ -45,6 +50,7 @@ public static class NumericOption
     /// <param name="provider">An optional format provider.</param>
     /// <returns>The parsed value wrapped in a <c>Some</c> option, or else <c>None</c>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PreludeExport("NumericOptionParse")]
     public static NumericOption<T> Parse<T>(string s, IFormatProvider? provider)
         where T : struct, IParsable<T>, INumber<T>
     {
@@ -59,6 +65,7 @@ public static class NumericOption
     /// <param name="s">The string to parse.</param>
     /// <returns>The parsed value wrapped in a <c>Some</c> option, or else <c>None</c>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PreludeExport("NumericOptionParse")]
     public static NumericOption<T> Parse<T>(string s) where T : struct, IParsable<T>, INumber<T>
         => Parse<T>(s, provider: null);
 
@@ -70,6 +77,7 @@ public static class NumericOption
     /// <param name="provider">An optional format provider.</param>
     /// <returns>The parsed value wrapped in a <c>Some</c> option, or else <c>None</c>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PreludeExport("NumericOptionParse")]
     public static NumericOption<T> Parse<T>(ReadOnlySpan<char> s, IFormatProvider? provider)
         where T : struct, ISpanParsable<T>, INumber<T>
     {
@@ -84,6 +92,7 @@ public static class NumericOption
     /// <param name="s">The char span to parse.</param>
     /// <returns>The parsed value wrapped in a <c>Some</c> option, or else <c>None</c>.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [PreludeExport("NumericOptionParse")]
     public static NumericOption<T> Parse<T>(ReadOnlySpan<char> s) where T : struct, ISpanParsable<T>, INumber<T>
         => Parse<T>(s, provider: null);
 }
