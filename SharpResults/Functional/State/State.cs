@@ -1,5 +1,4 @@
-using SharpResults.Core;
-using SharpResults.Types;
+using SharpResults.Core.Types;
 
 namespace SharpResults.Functional.State;
 

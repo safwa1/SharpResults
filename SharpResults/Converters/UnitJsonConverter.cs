@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using SharpResults.Core;
-using SharpResults.Types;
+using SharpResults.Core.Types;
 
 namespace SharpResults.Converters;
 
@@ -13,9 +12,7 @@ internal sealed class UnitJsonConverter : JsonConverter<Unit>
     /// <summary>
     /// Creates a new instance of UnitJsonConverter.
     /// </summary>
-    public UnitJsonConverter()
-    {
-    }
+    public UnitJsonConverter() {}
 
     /// <inheritdoc/>
     public override Unit Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)

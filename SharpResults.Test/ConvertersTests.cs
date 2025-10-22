@@ -1,5 +1,6 @@
 using System.Text.Json;
 using SharpResults.Core;
+using SharpResults.Core.Types;
 using SharpResults.Types;
 
 namespace SharpResults.Test;
@@ -52,7 +53,7 @@ public class ConvertersTests
     [Fact]
     public void UnitJsonConverter_SerializesAndDeserializes()
     {
-        var unit = Unit.Default;
+        var unit = Prelude.Unit;
         var json = JsonSerializer.Serialize(unit);
         var deserialized = JsonSerializer.Deserialize<Unit>(json);
         Assert.Equal(unit, deserialized);

@@ -1,4 +1,5 @@
 using SharpResults.Core;
+using SharpResults.Core.Types;
 using SharpResults.Types;
 
 namespace SharpResults.Functional.Effects;
@@ -16,7 +17,7 @@ public class BindEffect<T, U> : Effect<U>
         _f = f;
     }
 
-    public override async Task<Result<U, Exception>> Run()
+    public override async Task<Result<U, ResultError>> Run()
     {
         var result = await _effect.Run();
         if (result.IsErr)
