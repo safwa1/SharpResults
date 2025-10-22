@@ -4,8 +4,7 @@
         <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-
-        <PackageReadmeFile>README.md</PackageReadmeFile>
+        
         <PackageId>SharpResults.Simple</PackageId>
         <Version>0.1.0</Version>
         <ReleaseVersion>0.1.1</ReleaseVersion>
